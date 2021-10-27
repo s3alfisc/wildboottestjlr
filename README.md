@@ -19,7 +19,7 @@ To initiate the package, run
 
 ``` r
 library(wildboottestjlr)
-wildboottestjlr:::wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
+wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 #> Julia version 1.6.3 at location C:\Users\alexa\AppData\Local\Programs\Julia-1.6.3\bin will be used.
 #> Loading setup script for JuliaCall...
 #> Finish loading setup script for JuliaCall.
@@ -40,16 +40,16 @@ incorrect.
 ``` r
 data(voters)
 lm_fit <- lm(proposition_vote ~ treatment  + log_income, data = voters)
-wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
+boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
 #> $point_estimate
 #> [1] 0.08925428
 #> 
 #> $p_val
-#> [1] 0.003003003
+#> [1] 0.002002002
 #> 
 #> $conf_int
 #>            [,1]      [,2]
-#> [1,] 0.04034033 0.1368555
+#> [1,] 0.03880375 0.1397345
 #> 
 #> attr(,"class")
 #> [1] "boottest"

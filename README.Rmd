@@ -30,16 +30,19 @@ Julia needs to be installed.
 To initiate the package, run
 
 ```{r}
-# wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
+library(wildboottestjlr)
+wildboottestjlr:::wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 ```
 
 This will initiate Julia and load WildBootTest.jl. 
 
+Note: currently, only a method for `lm` is implemented. The lm method only works for simple cases (the boottest & fwildclusterboot defaults). Further, the data objects are not
+sorted, so all inference will be incorrect. 
+
 ```{r}
-library(wildboottestjlr)
 data(voters)
 lm_fit <- lm(proposition_vote ~ treatment  + log_income, data = voters)
-
+wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
 
 ```
 
