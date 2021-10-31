@@ -3,15 +3,16 @@
 # 1) test boot_lm
 
 
+library(wildboottestjlr)
+library(tinytest)
 # if not yet run: julia_setup()
-# library(wildboottestjlr)
 # wildboottestjlr::wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 
 reltol <- 0.02
 
 N <- 1000
 voters <- fwildclusterboot:::create_data(N = N,
-                                        N_G1 = 80,
+                                        N_G1 = 50,
                                         icc1 = 0.5,
                                         N_G2 = 20,
                                         icc2 = 0.2,
@@ -40,7 +41,7 @@ for(type in c("rademacher", "webb", "mammen", "norm")){
   expect_equal(boot_r$p_val, boot_jl2$p_val, tol = reltol)
   expect_equal(boot_r$conf_int, c(boot_jl2$conf_int), tol = reltol)
 
-  boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "<", conf_int = FALSE)
+  boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = ">", conf_int = FALSE)
   boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = ">", conf_int = FALSE)
   expect_equal(boot_r$p_val, boot_jl3$p_val, tol = reltol)
 
