@@ -10,7 +10,7 @@ Julia needs to be installed.
 ``` r
 # clone wildboottestjlr from github
 # then 
-# install(path_to_wildboottestjlr)
+# devtools::install(path_to_wildboottestjlr)
 ```
 
 ## Example
@@ -31,11 +31,11 @@ wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 ```
 
 This will initiate Julia and load WildBootTest.jl.
+`wildboottestjlr_setup()` will have to run once for each r session.
 
-Note: currently, only a method for `lm` is implemented. The lm method
-only works for simple cases (the boottest & fwildclusterboot defaults).
-Further, the data objects are not sorted, so all inference will be
-incorrect.
+Note: currently, only a method for `lm` is implemented. The
+`boottest.lm()` method only works for simple cases (one-way clustering,
+not all of boottest’s functionality is currently supported).
 
 ``` r
 data(voters)
@@ -49,8 +49,45 @@ boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
 #> 
 #> $conf_int
 #>            [,1]      [,2]
-#> [1,] 0.04076565 0.1371895
+#> [1,] 0.03639908 0.1397856
 #> 
 #> attr(,"class")
 #> [1] "boottest"
 ```
+
+How does it compare to ´fwildclusterboot´ ?
+
+``` r
+library(fwildclusterboot)
+#> Registered S3 methods overwritten by 'fwildclusterboot':
+#>   method           from           
+#>   glance.boottest  wildboottestjlr
+#>   plot.boottest    wildboottestjlr
+#>   summary.boottest wildboottestjlr
+#>   tidy.boottest    wildboottestjlr
+#> 
+#> Attaching package: 'fwildclusterboot'
+#> The following object is masked from 'package:wildboottestjlr':
+#> 
+#>     boottest
+res <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
+summary(res)
+#> boottest.lm(object = lm_fit, clustid = "group_id1", param = "treatment", 
+#>     B = 999)
+#>  
+#>  Hypothesis: 1*treatment = 0
+#>  Observations: 300
+#>  Bootstr. Iter: 999
+#>  Bootstr. Type: rademacher
+#>  Clustering: 1-way
+#>  Confidence Sets: 95%
+#>  Number of Clusters: 40
+#> 
+#>              term estimate statistic p.value conf.low conf.high
+#> 1 1*treatment = 0    0.089     3.756   0.004    0.041     0.139
+```
+
+### Tests
+
+Tests that compare `wildboottestjlr` to `fwildclusterboot` can be found
+in the “inst” folder.

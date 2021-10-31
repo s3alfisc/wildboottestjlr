@@ -22,7 +22,7 @@ Julia needs to be installed.
 ``` r
 # clone wildboottestjlr from github
 # then 
-# install(path_to_wildboottestjlr)
+# devtools::install(path_to_wildboottestjlr)
 
 ```
 ## Example 
@@ -34,9 +34,9 @@ library(wildboottestjlr)
 wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 ```
 
-This will initiate Julia and load WildBootTest.jl. 
+This will initiate Julia and load WildBootTest.jl. `wildboottestjlr_setup()` will have to run once for each r session.
 
-Note: currently, only a method for `lm` is implemented. The lm method only works for simple cases (the boottest & fwildclusterboot defaults). Further, the data objects are not sorted, so all inference will be incorrect. 
+Note: currently, only a method for `lm` is implemented. The `boottest.lm()` method only works for simple cases (one-way clustering, not all of boottest's functionality is currently supported). 
 
 ```{r}
 data(voters)
@@ -45,5 +45,18 @@ boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
 
 ```
 
+How does it compare to ´fwildclusterboot´ ?
+
+```{r}
+library(fwildclusterboot)
+res <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
+summary(res)
+
+
+```
+
+### Tests 
+
+Tests that compare `wildboottestjlr` to `fwildclusterboot` can be found in the "inst" folder.
 
 

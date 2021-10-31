@@ -12,8 +12,10 @@ Imports:
     JuliaCall,
     Formula,
     dreamerr,
-    generics
+    generics, 
+    collapse
 Suggests: 
+    fwildclusterboot,
     fixest,
     lfe,
     data.table,
@@ -22,9 +24,10 @@ Suggests:
     rmarkdown,
     broom, 
     modelsummary, 
-    RStata
+    RStata, 
+    tinytest
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+        license
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

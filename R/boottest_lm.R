@@ -263,7 +263,7 @@ boottest.lm <- function(object,
   # number of clusters used in bootstrap - always derived from bootcluster
   N_G <- length(unique(preprocess$bootcluster[, 1]))
   N_G_2 <- 2^N_G
-  if (type %in% c("rademacher", "mammen") & N_G_2 < B) {
+  if (type %in% c("rademacher") & N_G_2 < B) {
     warning(paste("There are only", N_G_2, "unique draws from the rademacher distribution for", length(unique(preprocess$bootcluster[, 1])), "clusters. Therefore, B = ", N_G_2, " with full enumeration. Consider using webb weights instead."),
             call. = FALSE,
             noBreaks. = TRUE
@@ -284,9 +284,24 @@ boottest.lm <- function(object,
   # send R objects to Julia,
 
   # first - order data inputs by clusters
-  preprocess$Y <- preprocess$Y[order(preprocess$clustid)]
-  preprocess$X <- preprocess$X[order(preprocess$clustid),]
-  preprocess$clustid <- preprocess$clustid[order(preprocess$clustid),]
+  order_clusters <- order(preprocess$clustid)
+  preprocess$Y <- preprocess$Y[order_clusters]
+  preprocess$X <- preprocess$X[order_clusters,]
+  preprocess$clustid <- preprocess$clustid[order_clusters,]
+  preprocess$weights <- preprocess$weights[order_clusters]
+  preprocess$bootcluster <- preprocess$bootcluster[order_clusters,]
+
+
+
+  # create a "cluster" data.frame
+  # note from WildBootTest.jl:
+  # Order the columns of `clustid` this way:
+  # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
+  # 2. Variables used to define both bootstrapping and error clusters.
+  # 3. Variables only used to define error clusters.
+  # In the most common case, `clustid` will consist of a single column of type 2.
+
+
 
   # assign all values needed in WildBootTest
   JuliaCall::julia_assign("Y", preprocess$Y)
@@ -295,17 +310,35 @@ boottest.lm <- function(object,
   JuliaCall::julia_assign("R", R)
   JuliaCall::julia_assign("beta0", beta0)
   JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
-  JuliaCall::julia_assign("reps", preprocess$B)
+  JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTest.jl demands integer
   JuliaCall::julia_assign("clustid", as.matrix(preprocess$clustid))
   JuliaCall::julia_assign("weights", preprocess$weights)
   JuliaCall::julia_assign("fixed_effect", preprocess$fixed_effect)
   JuliaCall::julia_assign("bootcluster", preprocess$bootcluster)
+  JuliaCall::julia_assign("level", 1 - sign_level)
+  JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
+
+  if(type == "rademacher"){
+    JuliaCall::julia_command("v = WildBootTest.rademacher;")
+  } else if(type == "mammen"){
+    JuliaCall::julia_command("v = WildBootTest.mammen;")
+  } else if(type == "norm"){
+    JuliaCall::julia_command("v = WildBootTest.normal;")
+  } else if(type == "webb"){
+    JuliaCall::julia_command("v = WildBootTest.webb;")
+  }
 
   JuliaCall::julia_eval("boot_res = wildboottest(
                                     (R, [beta0]);
                                     resp = Y,
                                     predexog = X,
-                                    clustid= clustid)")
+                                    clustid= clustid,
+                                    reps = reps,
+                                    auxwttype=v,
+                                    getCI = getCI,
+                                    level = level
+
+                        )")
 
 
 
@@ -338,3 +371,4 @@ boottest.lm <- function(object,
   #invisible(res_final)
   res_final
 }
+
