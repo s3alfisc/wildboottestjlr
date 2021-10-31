@@ -317,6 +317,17 @@ boottest.lm <- function(object,
   JuliaCall::julia_assign("bootcluster", preprocess$bootcluster)
   JuliaCall::julia_assign("level", 1 - sign_level)
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
+  JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
+
+  if(p_val_type == "two-tailed"){
+    JuliaCall::julia_assign("ptype", "symmetric")
+  } else if(p_val_type == "equal_tailed"){
+    JuliaCall::julia_assign("ptype", "equaltail")
+  } else if(p_val_type == ">"){
+    JuliaCall::julia_assign("ptype", "upper")
+  } else if(p_val_type == "<"){
+    JuliaCall::julia_assign("ptype", "lower")
+  }
 
   if(type == "rademacher"){
     JuliaCall::julia_command("v = WildBootTest.rademacher;")
