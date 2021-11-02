@@ -320,13 +320,13 @@ boottest.lm <- function(object,
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
 
   if(p_val_type == "two-tailed"){
-    JuliaCall::julia_assign("ptype", "symmetric")
+    JuliaCall::julia_command("ptype = WildBootTest.symmetric;")
   } else if(p_val_type == "equal_tailed"){
-    JuliaCall::julia_assign("ptype", "equaltail")
+    JuliaCall::julia_command("ptype = WildBootTest.equaltail;")
   } else if(p_val_type == ">"){
-    JuliaCall::julia_assign("ptype", "upper")
+    JuliaCall::julia_command("ptype = WildBootTest.upper;")
   } else if(p_val_type == "<"){
-    JuliaCall::julia_assign("ptype", "lower")
+    JuliaCall::julia_command("ptype = WildBootTest.lower;")
   }
 
   if(type == "rademacher"){
@@ -346,6 +346,7 @@ boottest.lm <- function(object,
                                     clustid= clustid,
                                     reps = reps,
                                     auxwttype=v,
+                                    ptype = ptype,
                                     getCI = getCI,
                                     level = level
 
