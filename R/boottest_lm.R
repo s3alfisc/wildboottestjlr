@@ -318,6 +318,11 @@ boottest.lm <- function(object,
   JuliaCall::julia_assign("level", 1 - sign_level)
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
+  JuliaCall::julia_assign("obswt", preprocess$weights) # check if this is a vector of ones or NULL if no weights specified
+  JuliaCall::julia_assign("imposenull", ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE))
+
+  rng_char <- paste0("rng = StableRNGs.StableRNG(", seed, ");")
+  JuliaCall::julia_command(rng_char)
 
   if(p_val_type == "two-tailed"){
     JuliaCall::julia_command("ptype = WildBootTest.symmetric;")
@@ -348,7 +353,9 @@ boottest.lm <- function(object,
                                     auxwttype=v,
                                     ptype = ptype,
                                     getCI = getCI,
-                                    level = level
+                                    level = level,
+                                    imposenull = imposenull,
+                                    rng = rng
 
                         )")
 

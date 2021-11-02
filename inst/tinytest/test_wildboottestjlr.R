@@ -34,46 +34,59 @@ if(run){
 
   for(type in c("rademacher", "webb", "mammen", "norm")){
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
-    boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
+    for(impose_null in c(TRUE, FALSE)){
 
-    expect_equal(boot_r$p_val, boot_jl1$p_val, tol = reltol)
-    expect_equal(boot_r$conf_int, c(boot_jl1$conf_int), tol = reltol)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
+      boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "equal-tailed")
-    boot_jl2 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "equal-tailed")
-    expect_equal(boot_r$p_val, boot_jl2$p_val, tol = reltol)
-    expect_equal(boot_r$conf_int, c(boot_jl2$conf_int), tol = reltol)
+      expect_equal(boot_r$p_val, boot_jl1$p_val, tol = reltol)
+      expect_equal(boot_r$conf_int, c(boot_jl1$conf_int), tol = reltol)
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = ">", conf_int = FALSE)
-    boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = ">", conf_int = FALSE)
-    expect_equal(boot_r$p_val, boot_jl3$p_val, tol = reltol)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "equal-tailed")
+      boot_jl2 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "equal-tailed")
+      expect_equal(boot_r$p_val, boot_jl2$p_val, tol = reltol)
+      expect_equal(boot_r$conf_int, c(boot_jl2$conf_int), tol = reltol)
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = "<", conf_int = FALSE)
-    boot_jl4 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = "<", conf_int = FALSE)
-    expect_equal(boot_r$p_val, boot_jl4$p_val, tol = reltol)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = ">", conf_int = FALSE)
+      boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = ">", conf_int = FALSE)
+      expect_equal(boot_r$p_val, boot_jl3$p_val, tol = reltol)
 
-    # multi-param hypotheses
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = "<", conf_int = FALSE)
+      boot_jl4 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 199999, param = "treatment", type = type, p_val_type = "<", conf_int = FALSE)
+      expect_equal(boot_r$p_val, boot_jl4$p_val, tol = reltol)
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 299999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "two-tailed")
-    boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 299999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "two-tailed")
-    expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
-    expect_equal(boot_r$conf_int, c(boot_jl$conf_int), tol = reltol)
+      # multi-param hypotheses
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "equal-tailed")
-    boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "equal-tailed")
-    expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
-    expect_equal(boot_r$conf_int, c(boot_jl$conf_int), tol = reltol)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 299999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "two-tailed")
+      boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 299999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "two-tailed")
+      expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
+      expect_equal(boot_r$conf_int, c(boot_jl$conf_int), tol = reltol)
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
-    boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
-    expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "equal-tailed")
+      boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "equal-tailed")
+      expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
+      expect_equal(boot_r$conf_int, c(boot_jl$conf_int), tol = reltol)
 
-    boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "<", conf_int = FALSE)
-    boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "<", conf_int = FALSE)
-    expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
+      boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
+      expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
 
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "<", conf_int = FALSE)
+      boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "<", conf_int = FALSE)
+      expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
+
+
+    }
 
   }
+
+  # test that same seeds as specified via rng produce equivalent results:
+  boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", seed = 1)
+  boot_jl2 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", seed = 1)
+  boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", seed = 2)
+
+  expect_equal(boot_jl1, boot_jl2) # expect exact equality
+  expect_equal(boot_jl1, boot_jl3, tol = reltol)
+
 
 }
