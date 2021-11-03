@@ -33,6 +33,13 @@ wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 This will initiate Julia and load WildBootTest.jl.
 `wildboottestjlr_setup()` will have to run once for each r session.
 
+The `set_julia_seed()` function allows to set a “global” seed within the
+Julia session:
+
+``` r
+set_julia_seed(rng = 12313452435)
+```
+
 Note: currently, only a method for `lm` is implemented. The
 `boottest.lm()` method only works for simple cases (one-way clustering,
 not all of boottest’s functionality is currently supported).
@@ -45,11 +52,11 @@ boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
 #> [1] 0.08925428
 #> 
 #> $p_val
-#> [1] 0
+#> [1] 0.002002002
 #> 
 #> $conf_int
-#>            [,1]      [,2]
-#> [1,] 0.03639908 0.1397856
+#>           [,1]      [,2]
+#> [1,] 0.0414222 0.1342879
 #> 
 #> attr(,"class")
 #> [1] "boottest"
@@ -84,7 +91,7 @@ summary(res)
 #>  Number of Clusters: 40
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*treatment = 0    0.089     3.756   0.004    0.041     0.139
+#> 1 1*treatment = 0    0.089     3.756   0.001    0.039     0.139
 ```
 
 ### Tests
