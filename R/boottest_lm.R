@@ -21,9 +21,7 @@
 #'        returns 0.95% confidence intervals. By default, sign_level = 0.05.
 #' @param conf_int A logical vector. If TRUE, boottest computes confidence
 #'        intervals by p-value inversion. If FALSE, only the p-value is returned.
-#' @param seed An integer. Allows the user to set a random seed. If NULL, `boottest()` sets an
-#'        internal seed. Hence by default, calling `boottest()` multiple times on the same object will produce
-#'        the same test statistics.
+#' @param rng An integer. Controls the random number generation, which is handled via the `StableRNG()` function from the `StableRNGs` Julia package.
 #' @param R Hypothesis Vector giving linear combinations of coefficients. Must be either NULL or a vector of the same length as `param`. If NULL, a vector of ones of length param.
 #' @param beta0 A numeric. Shifts the null hypothesis
 #'        H0: param = beta0 vs H1: param != beta0
@@ -116,7 +114,7 @@
 #'                   param = "treatment",
 #'                   clustid = c("group_id1", "group_id2"),
 #'                   sign_level = 0.2,
-#'                   seed = 8,
+#'                   rng = 8,
 #'                   beta0 = 2)
 #' # test treatment + ideology1 = 2
 #' boot4 <- boottest(lm_fit,
@@ -134,7 +132,7 @@ boottest.lm <- function(object,
                         B,
                         bootcluster = "max",
                         conf_int = NULL,
-                        seed = NULL,
+                        rng = NULL,
                         R = NULL,
                         beta0 = 0,
                         sign_level = NULL,
@@ -154,7 +152,7 @@ boottest.lm <- function(object,
   check_arg(B, "scalar integer")
   check_arg(sign_level, "scalar numeric")
   check_arg(conf_int, "logical scalar | NULL")
-  check_arg(seed, "scalar integer | NULL")
+  check_arg(rng, "scalar integer | NULL")
   check_arg(R, "NULL| scalar numeric | numeric vector")
   check_arg(beta0, "numeric scalar | NULL")
   check_arg(bootcluster, "character vector")
@@ -164,8 +162,10 @@ boottest.lm <- function(object,
   # check appropriateness of nthreads
   #nthreads <- check_set_nthreads(nthreads)
 
-  if(is.null(seed)){
-    seed <- 1
+  if(!is.null(rng)){
+    # if an rng value is provided, set the seed internally
+    rng_char <- paste0("rng = StableRNGs.StableRNG(", rng, ");")
+    JuliaCall::julia_command(rng_char)
   }
 
   if(maxiter < 1){
@@ -320,9 +320,6 @@ boottest.lm <- function(object,
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
   JuliaCall::julia_assign("obswt", preprocess$weights) # check if this is a vector of ones or NULL if no weights specified
   JuliaCall::julia_assign("imposenull", ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE))
-
-  rng_char <- paste0("rng = StableRNGs.StableRNG(", seed, ");")
-  JuliaCall::julia_command(rng_char)
 
   if(p_val_type == "two-tailed"){
     JuliaCall::julia_command("ptype = WildBootTest.symmetric;")
