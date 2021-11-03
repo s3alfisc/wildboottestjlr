@@ -89,4 +89,37 @@ if(run){
   expect_equal(boot_jl1, boot_jl3, tol = reltol)
 
 
+  # tests for EXACT equality for enumeration cases of rademacher weights (the weights matrices are exactly identical)
+
+  voters2 <- fwildclusterboot:::create_data(N = N,
+                                           N_G1 = 8,
+                                           icc1 = 0.5,
+                                           N_G2 = 20,
+                                           icc2 = 0.2,
+                                           numb_fe1 = 10,
+                                           numb_fe2 = 10,
+                                           seed = 45,
+                                           weights = 1:N
+  )
+
+  lm_fit2 <- lm(proposition_vote ~ treatment  + log_income, data = voters2)
+
+  boot_r <- fwildclusterboot::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = "rademacher", p_val_type = "two-tailed")
+  boot_jl1 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = "rademacher", p_val_type = "two-tailed")
+
+  expect_equal(boot_r$p_val, boot_jl1$p_val)
+
+  boot_r <- fwildclusterboot::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = "rademacher", p_val_type = "equal-tailed")
+  boot_jl2 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = "rademacher", p_val_type = "equal-tailed")
+  expect_equal(boot_r$p_val, boot_jl2$p_val)
+
+  boot_r <- fwildclusterboot::boottest(lm_fit2, clustid = "group_id1", B = 199999, param = "treatment", type = "rademacher", p_val_type = ">", conf_int = FALSE)
+  boot_jl3 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 199999, param = "treatment", type = "rademacher", p_val_type = ">", conf_int = FALSE)
+  expect_equal(boot_r$p_val, boot_jl3$p_val)
+
+  boot_r <- fwildclusterboot::boottest(lm_fit2, clustid = "group_id1", B = 199999, param = "treatment", type = "rademacher", p_val_type = "<", conf_int = FALSE)
+  boot_jl4 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 199999, param = "treatment", type = "rademacher", p_val_type = "<", conf_int = FALSE)
+  expect_equal(boot_r$p_val, boot_jl4$p_val)
+
+
 }
