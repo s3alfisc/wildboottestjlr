@@ -11,7 +11,7 @@
   B,
   bootcluster = "max",
   conf_int = NULL,
-  seed = NULL,
+  rng = NULL,
   R = NULL,
   beta0 = 0,
   sign_level = NULL,
@@ -45,9 +45,7 @@ Other options include "min", where bootstrapping is clustered by the cluster var
 \item{conf_int}{A logical vector. If TRUE, boottest computes confidence
 intervals by p-value inversion. If FALSE, only the p-value is returned.}
 
-\item{seed}{An integer. Allows the user to set a random seed. If NULL, \code{boottest()} sets an
-internal seed. Hence by default, calling \code{boottest()} multiple times on the same object will produce
-the same test statistics.}
+\item{rng}{An integer. Controls the random number generation, which is handled via the \code{StableRNG()} function from the \code{StableRNGs} Julia package.}
 
 \item{R}{Hypothesis Vector giving linear combinations of coefficients. Must be either NULL or a vector of the same length as \code{param}. If NULL, a vector of ones of length param.}
 
@@ -152,7 +150,7 @@ boot3 <- boottest(lm_fit,
                   param = "treatment",
                   clustid = c("group_id1", "group_id2"),
                   sign_level = 0.2,
-                  seed = 8,
+                  rng = 8,
                   beta0 = 2)
 # test treatment + ideology1 = 2
 boot4 <- boottest(lm_fit,
