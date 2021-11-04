@@ -32,6 +32,8 @@ if(run){
   # note: bug in Julia with type = "norm"
   # second note: there seems to be a bug in the ptype argument - "upper" produces results equal to "symmetric" or "equal-tailed"
 
+  wildboottestjlr::set_julia_seed(12345)
+
   for(type in c("rademacher", "webb", "mammen", "norm")){
 
     for(impose_null in c(TRUE, FALSE)){
@@ -67,8 +69,8 @@ if(run){
       expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
       expect_equal(boot_r$conf_int, c(boot_jl$conf_int), tol = reltol)
 
-      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
-      boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
+      boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 199999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
+      boot_jl <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 199999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = ">", conf_int = FALSE)
       expect_equal(boot_r$p_val, boot_jl$p_val, tol = reltol)
 
       boot_r <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 99999, param = c("treatment", "log_income"), R = c(1, 0.1), type = type, p_val_type = "<", conf_int = FALSE)
@@ -81,9 +83,9 @@ if(run){
   }
 
   # test that same seeds as specified via rng produce equivalent results:
-  boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", seed = 1)
-  boot_jl2 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", seed = 1)
-  boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", seed = 2)
+  boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 1)
+  boot_jl2 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 1)
+  boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 2)
 
   expect_equal(boot_jl1, boot_jl2) # expect exact equality
   expect_equal(boot_jl1, boot_jl3, tol = reltol)

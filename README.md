@@ -28,6 +28,8 @@ wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 
 #> Warning: The internal function knitr:::wrap() has been deprecated. Please use
 #> the exported function knitr::sew() instead.
+# if WildBootTest.jl is not installed, run 
+#wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Program#s/Julia-1.6.3/bin", install_WildBooTestjl = TRUE)
 ```
 
 This will initiate Julia and load WildBootTest.jl.
@@ -91,7 +93,7 @@ summary(res)
 #>  Number of Clusters: 40
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*treatment = 0    0.089     3.756   0.001    0.039     0.139
+#> 1 1*treatment = 0    0.089     3.756       0    0.038     0.141
 ```
 
 ### Tests

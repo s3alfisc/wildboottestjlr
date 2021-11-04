@@ -283,27 +283,7 @@ boottest.lm <- function(object,
 
   # send R objects to Julia,
 
-  # first - order data inputs by clusters
-  order_clusters <- order(preprocess$clustid)
-  preprocess$Y <- preprocess$Y[order_clusters]
-  preprocess$X <- preprocess$X[order_clusters,]
-  preprocess$clustid <- preprocess$clustid[order_clusters,]
-  preprocess$weights <- preprocess$weights[order_clusters]
-  preprocess$bootcluster <- preprocess$bootcluster[order_clusters,]
-
-
-
-  # create a "cluster" data.frame
-  # note from WildBootTest.jl:
-  # Order the columns of `clustid` this way:
-  # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
-  # 2. Variables used to define both bootstrapping and error clusters.
-  # 3. Variables only used to define error clusters.
-  # In the most common case, `clustid` will consist of a single column of type 2.
-
-
-
-  # assign all values needed in WildBootTest
+  # assign all values needed in WildBootTest.jl
   JuliaCall::julia_assign("Y", preprocess$Y)
   JuliaCall::julia_assign("X", preprocess$X)
   R <- matrix(preprocess$R, 1, length(preprocess$R))

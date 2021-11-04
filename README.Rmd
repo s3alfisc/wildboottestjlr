@@ -32,6 +32,9 @@ To initiate the package, run
 ```{r}
 library(wildboottestjlr)
 wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
+# if WildBootTest.jl is not installed, run 
+#wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Program#s/Julia-1.6.3/bin", install_WildBooTestjl = TRUE)
+
 ```
 
 
