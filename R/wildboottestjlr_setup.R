@@ -9,4 +9,5 @@ wildboottestjlr_setup <- function (path_to_julia, install_WildBooTestjl = FALSE,
   }
   JuliaCall::julia_library("WildBootTest")
   JuliaCall::julia_library("StableRNGs")
+
 }

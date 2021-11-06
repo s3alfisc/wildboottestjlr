@@ -39,13 +39,15 @@
 #'        By default "two-tailed". Other options include "equal-tailed", ">" and "<".
 #' @param tol Numeric vector of length 1. The desired accuracy
 #'        (convergence tolerance) used in the root finding procedure to find the confidence interval.
-#'        1e-6 by default.
+#'        Relative tolerance of 1e-6 by default.
 #' @param maxiter Integer. Maximum number of iterations used in the root finding procedure to find the confidence interval.
 #'        10 by default.
 #' @param na_omit Logical. If TRUE, `boottest()` omits rows with missing
 #'        variables in the cluster variable that have not previously been deleted
 #'        when fitting the regression object (e.g. if the cluster variable was not used
 #'        when fitting the regression model).
+#' @param float Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
+#'
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @importFrom dreamerr check_arg validate_dots
@@ -158,6 +160,7 @@ boottest.lm <- function(object,
   check_arg(bootcluster, "character vector")
   check_arg(tol, "numeric scalar")
   check_arg(maxiter, "scalar integer")
+  check_arg(tol, "scalar numeric")
 
   # check appropriateness of nthreads
   #nthreads <- check_set_nthreads(nthreads)
@@ -263,6 +266,8 @@ boottest.lm <- function(object,
   # number of clusters used in bootstrap - always derived from bootcluster
   N_G <- length(unique(preprocess$bootcluster[, 1]))
   N_G_2 <- 2^N_G
+  # NOTE: no need to reset B in enumeration case -> handled by WildBootTest.jl ->
+  # throws an error
   if (type %in% c("rademacher") & N_G_2 < B) {
     warning(paste("There are only", N_G_2, "unique draws from the rademacher distribution for", length(unique(preprocess$bootcluster[, 1])), "clusters. Therefore, B = ", N_G_2, " with full enumeration. Consider using webb weights instead."),
             call. = FALSE,
@@ -272,12 +277,11 @@ boottest.lm <- function(object,
             call. = FALSE,
             noBreaks. = TRUE
     )
-    B <- N_G_2
-    full_enumeration <- TRUE
-  } else{
-    full_enumeration <- FALSE
-  }
-
+    #B <- N_G_2
+    #full_enumeration <- TRUE
+  } #else{
+    #full_enumeration <- FALSE
+  #}
 
   # conduct inference: calculate p-value
 
@@ -291,15 +295,53 @@ boottest.lm <- function(object,
   JuliaCall::julia_assign("beta0", beta0)
   JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
   JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTest.jl demands integer
-  JuliaCall::julia_assign("clustid", as.matrix(preprocess$clustid))
+
+  # Order the columns of `clustid` this way:
+  # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
+  # 2. Variables used to define both bootstrapping and error clusters.
+  # 3. Variables only used to define error clusters.
+  # In the most common case, `clustid` is a single column of type 2.
+
+  if(length(bootcluster == 1) && bootcluster == "max"){
+    bootcluster <- clustid[which.max(N_G)]
+  } else if(length(bootcluster == 1) && bootcluster == "min"){
+    bootcluster <- clustid[which.min(N_G)]
+  }
+
+  c1 <- bootcluster[which(!(bootcluster %in% clustid))]
+  c2 <- clustid[which(clustid %in% bootcluster)]
+  c3 <- clustid[which(!(clustid %in% bootcluster))]
+  all_c <- c(c1, c2, c3)
+  #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
+
+  JuliaCall::julia_assign("nbootclustvar", length(bootcluster))
+  JuliaCall::julia_assign("nerrclustvar", length(clustid))
+
+  # note that c("group_id1", NULL) == "group_id1"
+  clustid_mat <- (preprocess$model_frame[, all_c])
+  clustid_mat <- as.matrix(sapply(clustid_mat, as.integer))
+
+  JuliaCall::julia_assign("clustid", clustid_mat)
+
   JuliaCall::julia_assign("weights", preprocess$weights)
   JuliaCall::julia_assign("fixed_effect", preprocess$fixed_effect)
   JuliaCall::julia_assign("bootcluster", preprocess$bootcluster)
   JuliaCall::julia_assign("level", 1 - sign_level)
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
-  JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
   JuliaCall::julia_assign("obswt", preprocess$weights) # check if this is a vector of ones or NULL if no weights specified
   JuliaCall::julia_assign("imposenull", ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE))
+  JuliaCall::julia_assign("maxiter", maxiter)
+  JuliaCall::julia_assign("rtol", tol)
+
+  # only for felm, feols
+  # JuliaCall::julia_assign("feid", preprocess$fixed_effect)
+
+  # if(float == "Float32"){
+  #   JuliaCall::julia_command("T = Base.Float32;")
+  # } else if(float == "Float64"){
+  #   JuliaCall::julia_command("T = Base.Float64;")
+  # }
+
 
   if(p_val_type == "two-tailed"){
     JuliaCall::julia_command("ptype = WildBootTest.symmetric;")
@@ -326,13 +368,16 @@ boottest.lm <- function(object,
                                     resp = Y,
                                     predexog = X,
                                     clustid= clustid,
+                                    nbootclustvar = nbootclustvar,
+                                    nerrclustvar = nerrclustvar,
                                     reps = reps,
                                     auxwttype=v,
                                     ptype = ptype,
                                     getCI = getCI,
                                     level = level,
                                     imposenull = imposenull,
-                                    rng = rng
+                                    rng = rng,
+                                    rtol = rtol
 
                         )")
 

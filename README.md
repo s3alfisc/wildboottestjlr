@@ -93,10 +93,49 @@ summary(res)
 #>  Number of Clusters: 40
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*treatment = 0    0.089     3.756       0    0.038     0.141
+#> 1 1*treatment = 0    0.089     3.756   0.001     0.04     0.139
 ```
 
 ### Tests
 
 Tests that compare `wildboottestjlr` to `fwildclusterboot` can be found
 in the “inst” folder.
+
+### Debug
+
+Code to debug `wildbottestjlr::boottest`. If you set all these
+variables, you can run all code inside the function line by line:
+
+``` r
+library(wildboottestjlr)
+wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
+#> Warning: The internal function knitr:::wrap() has been deprecated. Please use
+#> the exported function knitr::sew() instead.
+
+#> Warning: The internal function knitr:::wrap() has been deprecated. Please use
+#> the exported function knitr::sew() instead.
+set_julia_seed(rng = 12313452435)
+data(voters)
+lm_fit <- lm(proposition_vote ~ treatment  + log_income + Q1_immigration, data = voters)
+boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
+
+object <- lm_fit
+clustid <- "group_id1"
+param <- "treatment"
+B <- 999
+bootcluster = c("group_id1", "Q1_immigration")
+conf_int = NULL
+rng = NULL
+R = NULL
+beta0 = 0
+sign_level = NULL
+type = "rademacher"
+impose_null = TRUE
+p_val_type = "two-tailed"
+tol = 1e-6
+maxiter = 10
+na_omit = TRUE
+
+devtools::load_all("C:/Users/alexa/Dropbox/wildboottestjlr/R")
+#> i Loading wildboottestjlr
+```
