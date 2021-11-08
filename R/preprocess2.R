@@ -197,14 +197,32 @@ preprocess2 <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   } else if(class(object) == "ivreg"){
 
     of <- object$call
-    o <- match(c("formula", "data"), names(of), 0L)
+    o <- match(c("formula", "data", "weights"), names(of), 0L)
     # keep only required arguments
     of <- of[c(1L, o)]
     # add argument to function
     of$drop.unused.levels <- TRUE
 
+    # create formula objects by adding fixed effects and clusters from call
+    # add potential other cluster variables from cluster argument
+    formula_coef_fe <- eval(of$formula)
 
+    # add cluster variable to formula_coef_fe
+    fml <- Formula::as.Formula(of$formula)
+    fml_linear <- formula(fml, lhs = 1, rhs = 1)
+    fml_iv <- formula(fml, lhs = 0, rhs = 2)
+    fml_linear_cluster <- update(fml_linear, paste("~ . +", paste(cluster, collapse = "+")))
+    fml_cluster <- Formula::as.Formula(fml_linear_cluster, fml_iv)
+    fml_iv_cluster <- formula(fml_cluster, collapse = TRUE, update = TRUE)
 
+    formula_coef_fe <- formula(Formula::as.Formula(fml_linear, fml_iv), collapse = TRUE, update = TRUE)
+
+    of$formula <- as.call(fml_iv_cluster)
+    o <- match(c("formula", "data", "weights"), names(of), 0L)
+    of <- of[c(1L, o)]
+    of[[1L]] <- quote(stats::model.frame)
+    of <- eval(of, parent.frame())
+    N_model <- object$nobs
 
 
   }
@@ -269,6 +287,16 @@ preprocess2 <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   Y <- model.response(model_frame)
   # X: need to delete clusters
   X <- model.matrix(formula_coef_fe, model_frame)
+
+  if(class(object) == "ivreg"){
+    X_exog <- X[, names(object$exogenous)]
+    X_endog <- X[, names(object$endogenous)]
+    instruments <- X[, names(object$instruments)]
+  } else{
+    X_exog <- NULL
+    X_endog <- NULL
+    instruments <- NULL
+  }
 
   if (!is.null(fe)) {
     # note: simply update(..., -1) does not work - intercept is dropped, but all levels of other fe are kept
@@ -381,9 +409,19 @@ preprocess2 <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   # --------------------------------------------------------------------------------------- #
   # collect output
 
-  R0 <- rep(0, length(colnames(X)))
-  R0[match(param, colnames(X))] <- R
-  names(R0) <- colnames(X)
+  if(class(object) == "ivreg"){
+    n_exog <- ncol(X_exog)
+    n_endog <- ncol(X_endog)
+    R0 <- rep(0, n_exog + n_endog)
+    R0[1:n_exog][match(param, colnames(X_exog))] <- R
+    R0[(n_exog +1):(n_exog + n_endog)][match(param, colnames(X_endog))] <- R
+    names(R0) <- c(colnames(X_exog), colnames(X_endog))
+  } else {
+    R0 <- rep(0, length(colnames(X)))
+    R0[match(param, colnames(X))] <- R
+    names(R0) <- colnames(X)
+  }
+
 
   res <- list(
     Y = Y,
@@ -400,7 +438,10 @@ preprocess2 <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     N_G = N_G,
     bootcluster = bootcluster,
     R0 = R0,
-    model_frame = model_frame
+    model_frame = model_frame,
+    X_exog = X_exog,
+    X_endog = X_endog,
+    instruments = instruments
   )
 
   res
