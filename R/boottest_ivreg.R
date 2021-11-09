@@ -145,7 +145,7 @@ boottest.ivreg <- function(object,
   JuliaCall::julia_assign("X_exog", preprocess$X_exog)
   JuliaCall::julia_assign("instruments", preprocess$instruments)
 
-  R <- matrix(c(preprocess$R, rep(0, ncol(preprocess$instruments))), 1, length(preprocess$R) + ncol(preprocess$instruments))
+  R <- matrix(preprocess$R, 1, length(preprocess$R))
   JuliaCall::julia_assign("R", R)
   JuliaCall::julia_assign("beta0", beta0)
   JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
@@ -217,6 +217,18 @@ boottest.ivreg <- function(object,
   } else if(type == "webb"){
     JuliaCall::julia_command("v = WildBootTest.webb;")
   }
+
+  # dim(preprocess$X_endog)
+  # dim(preprocess$X_exog)
+  # dim(preprocess$instruments)
+  # length(preprocess$Y)
+  # dim(clustid_mat)
+
+
+  JuliaCall::julia_eval("size(X_exog, 1) == length(Y)")
+  JuliaCall::julia_eval("size(X_endog, 1) == length(Y)")
+  JuliaCall::julia_eval("size(instruments, 1) == length(Y)")
+
 
   JuliaCall::julia_eval("boot_res = wildboottest(
                                     (R, [beta0]);

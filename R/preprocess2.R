@@ -413,8 +413,9 @@ preprocess2 <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     n_exog <- ncol(X_exog)
     n_endog <- ncol(X_endog)
     R0 <- rep(0, n_exog + n_endog)
-    R0[1:n_exog][match(param, colnames(X_exog))] <- R
-    R0[(n_exog +1):(n_exog + n_endog)][match(param, colnames(X_endog))] <- R
+    R0[match(param,c(colnames(X_exog), colnames(X_endog)))] <- R
+    #R0[1:n_exog][match(param, colnames(X_exog))] <- R
+    #R0[(n_exog +1):(n_exog + n_endog)][match(param, colnames(X_endog))] <- R
     names(R0) <- c(colnames(X_exog), colnames(X_endog))
   } else {
     R0 <- rep(0, length(colnames(X)))
