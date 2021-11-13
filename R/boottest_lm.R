@@ -187,11 +187,6 @@ boottest.lm <- function(object,
          call. = FALSE)
   }
 
-  if(p_val_type %in% c(">", "<") && conf_int == TRUE){
-    conf_int <- FALSE
-    warning(paste("Currently, boottest() does not calculate confidence intervals for one-sided hypotheses, but this will change in a future release."), call. = FALSE)
-  }
-
   if ((conf_int == TRUE || is.null(conf_int)) & B <= 100) {
     stop("The function argument B is smaller than 100. The number of bootstrap
           iterations needs to be 100 or higher in order to guarantee that the
@@ -266,7 +261,7 @@ boottest.lm <- function(object,
   # number of clusters used in bootstrap - always derived from bootcluster
   N_G <- length(unique(preprocess$bootcluster[, 1]))
   N_G_2 <- 2^N_G
-  # NOTE: no need to reset B in enumeration case -> handled by WildBootTest.jl ->
+  # NOTE: no need to reset B in enumeration case -> handled by WildBootTests..jl ->
   # throws an error
   if (type %in% c("rademacher") & N_G_2 < B) {
     warning(paste("There are only", N_G_2, "unique draws from the rademacher distribution for", length(unique(preprocess$bootcluster[, 1])), "clusters. Therefore, B = ", N_G_2, " with full enumeration. Consider using webb weights instead."),
@@ -287,14 +282,14 @@ boottest.lm <- function(object,
 
   # send R objects to Julia,
 
-  # assign all values needed in WildBootTest.jl
+  # assign all values needed in WildBootTests..jl
   JuliaCall::julia_assign("Y", preprocess$Y)
   JuliaCall::julia_assign("X", preprocess$X)
   R <- matrix(preprocess$R, 1, length(preprocess$R))
   JuliaCall::julia_assign("R", R)
   JuliaCall::julia_assign("beta0", beta0)
   JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
-  JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTest.jl demands integer
+  JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTests..jl demands integer
 
   # Order the columns of `clustid` this way:
   # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
@@ -344,23 +339,23 @@ boottest.lm <- function(object,
 
 
   if(p_val_type == "two-tailed"){
-    JuliaCall::julia_command("ptype = WildBootTest.symmetric;")
+    JuliaCall::julia_command("ptype = WildBootTests..symmetric;")
   } else if(p_val_type == "equal_tailed"){
-    JuliaCall::julia_command("ptype = WildBootTest.equaltail;")
+    JuliaCall::julia_command("ptype = WildBootTests..equaltail;")
   } else if(p_val_type == ">"){
-    JuliaCall::julia_command("ptype = WildBootTest.upper;")
+    JuliaCall::julia_command("ptype = WildBootTests..upper;")
   } else if(p_val_type == "<"){
-    JuliaCall::julia_command("ptype = WildBootTest.lower;")
+    JuliaCall::julia_command("ptype = WildBootTests..lower;")
   }
 
   if(type == "rademacher"){
-    JuliaCall::julia_command("v = WildBootTest.rademacher;")
+    JuliaCall::julia_command("v = WildBootTests..rademacher;")
   } else if(type == "mammen"){
-    JuliaCall::julia_command("v = WildBootTest.mammen;")
+    JuliaCall::julia_command("v = WildBootTests..mammen;")
   } else if(type == "norm"){
-    JuliaCall::julia_command("v = WildBootTest.normal;")
+    JuliaCall::julia_command("v = WildBootTests..normal;")
   } else if(type == "webb"){
-    JuliaCall::julia_command("v = WildBootTest.webb;")
+    JuliaCall::julia_command("v = WildBootTests..webb;")
   }
 
   JuliaCall::julia_eval("boot_res = wildboottest(
