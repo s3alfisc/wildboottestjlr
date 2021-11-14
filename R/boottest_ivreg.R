@@ -1,15 +1,89 @@
-# library(ivreg)
-# data("SchoolingReturns", package = "ivreg")
-# data <- SchoolingReturns
-# head(data)
-# data$parents14 <- as.factor(data$parents14)
-#
-# object <- ivreg(log(wage) ~ education + poly(experience, 2) + ethnicity + smsa + south + parents14 |
-#                nearcollege + poly(age, 2) + ethnicity + smsa + south + parents14,
-#              data = data,
-#              y = TRUE)
-# class(data$south)
-# clustid <- "south"
+#' Fast wild cluster bootstrap inference for object of class lm
+#'
+#' `boottest.ivreg` is a S3 method that allows for fast wild cluster
+#' bootstrap inference for objects of class ivreg by  implementing
+#' the fast wild bootstrap algorithm developed in Roodman et al., 2019
+#' for instrumental variable models (WRE, Davidson & McKinnon, 2010)
+#'
+#' @param object An object of class lm
+#' @param clustid A character vector containing the names of the cluster variables
+#' @param param A character vector of length one. The name of the regression
+#'        coefficient for which the hypothesis is to be tested
+#' @param B Integer. The number of bootstrap iterations. When the number of clusters is low,
+#'        increasing B adds little additional runtime.
+#' @param bootcluster A character vector. Specifies the bootstrap clustering variable or variables. If more
+#'        than one variable is specified, then bootstrapping is clustered by the intersections of
+#'        clustering implied by the listed variables. To mimic the behavior of stata's boottest command,
+#'        the default is to cluster by the intersection of all the variables specified via the `clustid` argument,
+#'        even though that is not necessarily recommended (see the paper by Roodman et al cited below, section 4.2).
+#'        Other options include "min", where bootstrapping is clustered by the cluster variable with the fewest clusters.
+#' @param sign_level A numeric between 0 and 1 which sets the significance level
+#'        of the inference procedure. E.g. sign_level = 0.05
+#'        returns 0.95% confidence intervals. By default, sign_level = 0.05.
+#' @param conf_int A logical vector. If TRUE, boottest computes confidence
+#'        intervals by p-value inversion. If FALSE, only the p-value is returned.
+#' @param rng An integer. Controls the random number generation, which is handled via the `StableRNG()` function from the `StableRNGs` Julia package.
+#' @param R Hypothesis Vector giving linear combinations of coefficients. Must be either NULL or a vector of the same length as `param`. If NULL, a vector of ones of length param.
+#' @param beta0 A numeric. Shifts the null hypothesis
+#'        H0: param = beta0 vs H1: param != beta0
+#' @param type character or function. The character string specifies the type
+#'        of boostrap to use: One of "rademacher", "mammen", "norm"
+#'        and "webb". Alternatively, type can be a function(n) for drawing
+#'        wild bootstrap factors. "rademacher" by default.
+#'        For the Rademacher and Mammen distribution, if the number of replications B exceeds
+#'        the number of possible draw ombinations, 2^(#number of clusters), then `boottest()`
+#'        will use each possible combination once (enumeration).
+#' @param impose_null Logical. Controls if the null hypothesis is imposed on
+#'        the bootstrap dgp or not. Null imposed `(WCR)` by default.
+#'        If FALSE, the null is not imposed `(WCU)`
+#' @param p_val_type Character vector of length 1. Type of p-value.
+#'        By default "two-tailed". Other options include "equal-tailed", ">" and "<".
+#' @param tol Numeric vector of length 1. The desired accuracy
+#'        (convergence tolerance) used in the root finding procedure to find the confidence interval.
+#'        Relative tolerance of 1e-6 by default.
+#' @param maxiter Integer. Maximum number of iterations used in the root finding procedure to find the confidence interval.
+#'        10 by default.
+#' @param na_omit Logical. If TRUE, `boottest()` omits rows with missing
+#'        variables in the cluster variable that have not previously been deleted
+#'        when fitting the regression object (e.g. if the cluster variable was not used
+#'        when fitting the regression model).
+#' @param float Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
+#'
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @importFrom dreamerr check_arg validate_dots
+#'
+#' @method boottest ivreg
+#'
+#' @return An object of class \code{boottest}
+#'
+#' \item{p_val}{The bootstrap p-value.}
+#' \item{conf_int}{The bootstrap confidence interval.}
+#' \item{param}{The tested parameter.}
+#' \item{N}{Sample size. Might differ from the regression sample size if the
+#'          cluster variables contain NA values.}
+#' \item{B}{Number of Bootstrap Iterations.}
+#' \item{clustid}{Names of the cluster Variables.}
+#' \item{N_G}{Dimension of the cluster variables as used in boottest.}
+#' \item{sign_level}{Significance level used in boottest.}
+#' \item{type}{Distribution of the bootstrap weights.}
+#' \item{t_stat}{The original test statistics - either imposing the null or not - with small sample correction `G / (G-1)`.}
+#' \item{test_vals}{All t-statistics calculated while calculating the
+#'       confidence interval.}
+#'  \item{t_boot}{All bootstrap t-statistics.}
+#' \item{regression}{The regression object used in boottest.}
+#' \item{call}{Function call of boottest.}
+#'
+#' @export
+#'
+#' @references Roodman et al., 2019, "Fast and wild: Bootstrap inference in
+#'             STATA using boottest", The STATA Journal.
+#'             (\url{https://journals.sagepub.com/doi/full/10.1177/1536867X19830877})
+#' @references Cameron, A. Colin, Jonah B. Gelbach, and Douglas L. Miller. "Bootstrap-based improvements for inference with clustered errors." The Review of Economics and Statistics 90.3 (2008): 414-427.
+#' @references MacKinnon, James G., and Matthew D. Webb. "The wild bootstrap for few (treated) clusters." The Econometrics Journal 21.2 (2018): 114-135.
+#' @references MacKinnon, James. "Wild cluster bootstrap confidence intervals." L'Actualite economique 91.1-2 (2015): 11-33.
+#' @references Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
+
 
 
 boottest.ivreg <- function(object,
@@ -29,7 +103,6 @@ boottest.ivreg <- function(object,
                           maxiter = 10,
                           na_omit = TRUE,
                           ...){
-
 
   # check inputs
   call <- match.call()
@@ -131,7 +204,7 @@ boottest.ivreg <- function(object,
   }
 
   # preprocess data: X, Y, weights, fixed effects
-  preprocess <- preprocess2(object = object,
+  preprocess <- preprocess(object = object,
                             cluster = clustid,
                             fe = NULL,
                             param = param,
@@ -139,14 +212,35 @@ boottest.ivreg <- function(object,
                             na_omit = na_omit,
                             R = R)
 
+  clustid_dims <- preprocess$clustid_dims
+  point_estimate <- as.vector(object$coefficients[param] %*% preprocess$R0[param])
+
+  clustid_fml <- as.formula(paste("~", paste(clustid, collapse = "+")))
+
+  # number of clusters used in bootstrap - always derived from bootcluster
+  N_G <- length(unique(preprocess$bootcluster[, 1]))
+  N_G_2 <- 2^N_G
+  # NOTE: no need to reset B in enumeration case -> handled by WildBootTests.jl ->
+  # throws an error
+  if (type %in% c("rademacher") & N_G_2 < B) {
+    warning(paste("There are only", N_G_2, "unique draws from the rademacher distribution for", length(unique(preprocess$bootcluster[, 1])), "clusters. Therefore, B = ", N_G_2, " with full enumeration. Consider using webb weights instead."),
+            call. = FALSE,
+            noBreaks. = TRUE
+    )
+    warning(paste("Further, note that under full enumeration and with B =", N_G_2, "bootstrap draws, only 2^(#clusters - 1) = ", 2^(N_G - 1), " distinct t-statistics and p-values can be computed. For a more thorough discussion, see Webb `Reworking wild bootstrap based inference for clustered errors` (2013)."),
+            call. = FALSE,
+            noBreaks. = TRUE
+    )
+  }
+
   # assign all values needed in WildBootTests.jl
   JuliaCall::julia_assign("Y", preprocess$Y)
   JuliaCall::julia_assign("X_endog", preprocess$X_endog)
   JuliaCall::julia_assign("X_exog", preprocess$X_exog)
   JuliaCall::julia_assign("instruments", preprocess$instruments)
 
-  R <- matrix(preprocess$R, 1, length(preprocess$R))
-  JuliaCall::julia_assign("R", R)
+  R_vec <- matrix(preprocess$R, 1, length(preprocess$R))
+  JuliaCall::julia_assign("R", R_vec)
   JuliaCall::julia_assign("beta0", beta0)
   JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
   JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTests.jl demands integer
@@ -178,8 +272,7 @@ boottest.ivreg <- function(object,
 
   JuliaCall::julia_assign("clustid", clustid_mat)
 
-  JuliaCall::julia_assign("weights", preprocess$weights)
-  JuliaCall::julia_assign("fixed_effect", preprocess$fixed_effect)
+
   JuliaCall::julia_assign("bootcluster", preprocess$bootcluster)
   JuliaCall::julia_assign("level", 1 - sign_level)
   JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
@@ -225,9 +318,9 @@ boottest.ivreg <- function(object,
   # dim(clustid_mat)
 
 
-  JuliaCall::julia_eval("size(X_exog, 1) == length(Y)")
-  JuliaCall::julia_eval("size(X_endog, 1) == length(Y)")
-  JuliaCall::julia_eval("size(instruments, 1) == length(Y)")
+  # JuliaCall::julia_eval("size(X_exog, 1) == length(Y)")
+  # JuliaCall::julia_eval("size(X_endog, 1) == length(Y)")
+  # JuliaCall::julia_eval("size(instruments, 1) == length(Y)")
 
 
   JuliaCall::julia_eval("boot_res = wildboottest(
@@ -250,5 +343,38 @@ boottest.ivreg <- function(object,
 
                         )")
 
+  # collect results:
+  p_val <- JuliaCall::julia_eval("p(boot_res)")
+  conf_int <- JuliaCall::julia_eval("CI(boot_res)")
+  t_stat <- JuliaCall::julia_eval("teststat(boot_res)")
+  #plot <- JuliaCall::julia_eval("plotpoints(boot_res)")
+
+  res_final <- list(
+    point_estimate = point_estimate,
+    p_val = p_val,
+    conf_int = conf_int,
+    # p_test_vals = res_p_val$p_grid_vals,
+    # test_vals = res_p_val$grid_vals,
+    t_stat = t_stat,
+    # t_boot = res$t_boot,
+    #regression = res$object,
+    param = param,
+    N = preprocess$N,
+    B = B,
+    clustid = clustid,
+    # depvar = depvar,
+    N_G = preprocess$N_G,
+    sign_level = sign_level,
+    call = call,
+    type = type,
+    impose_null = impose_null,
+    R = R,
+    beta0 = beta0
+  )
+
+
+  class(res_final) <- "boottest"
+
+  invisible(res_final)
 
 }

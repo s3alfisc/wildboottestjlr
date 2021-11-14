@@ -410,13 +410,13 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   # collect output
 
   if(class(object) == "ivreg"){
-    n_exog <- ncol(X_exog)
-    n_endog <- ncol(X_endog)
+    n_exog <- length(names(object$exogenous))
+    n_endog <- length(names(object$endogenous))
     R0 <- rep(0, n_exog + n_endog)
-    R0[match(param,c(colnames(X_exog), colnames(X_endog)))] <- R
+    R0[match(param,c(names(object$exogenous), names(object$endogenous)))] <- R
     #R0[1:n_exog][match(param, colnames(X_exog))] <- R
     #R0[(n_exog +1):(n_exog + n_endog)][match(param, colnames(X_endog))] <- R
-    names(R0) <- c(colnames(X_exog), colnames(X_endog))
+    names(R0) <- c(names(object$exogenous), names(object$endogenous))
   } else {
     R0 <- rep(0, length(colnames(X)))
     R0[match(param, colnames(X))] <- R

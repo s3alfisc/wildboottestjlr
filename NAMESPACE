@@ -2,6 +2,7 @@
 
 S3method(boottest,felm)
 S3method(boottest,fixest)
+S3method(boottest,ivreg)
 S3method(boottest,lm)
 S3method(glance,boottest)
 S3method(plot,boottest)
