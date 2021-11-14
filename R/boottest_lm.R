@@ -99,7 +99,8 @@
 #' @references MacKinnon, James. "Wild cluster bootstrap confidence intervals." L'Actualite economique 91.1-2 (2015): 11-33.
 #' @references Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
 #' @examples
-#' library(fwildclusterboot)
+#' library(wildboottestjlr)
+#' wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 #' data(voters)
 #' lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
 #'          data = voters)
@@ -160,7 +161,6 @@ boottest.lm <- function(object,
   check_arg(bootcluster, "character vector")
   check_arg(tol, "numeric scalar")
   check_arg(maxiter, "scalar integer")
-  check_arg(tol, "scalar numeric")
 
   # check appropriateness of nthreads
   #nthreads <- check_set_nthreads(nthreads)
@@ -168,7 +168,7 @@ boottest.lm <- function(object,
   if(!is.null(rng)){
     # if an rng value is provided, set the seed internally
     rng_char <- paste0("rng = StableRNGs.StableRNG(", rng, ");")
-    JuliaCall::julia_command(rng_char)
+    JuliaCall::julia_assign(rng_char)
   }
 
   if(maxiter < 1){
@@ -244,7 +244,7 @@ boottest.lm <- function(object,
   }
 
   # preprocess data: X, Y, weights, fixed effects
-  preprocess <- preprocess2(object = object,
+  preprocess <- preprocess(object = object,
                             cluster = clustid,
                             fe = NULL,
                             param = param,
@@ -272,18 +272,13 @@ boottest.lm <- function(object,
             call. = FALSE,
             noBreaks. = TRUE
     )
-    #B <- N_G_2
-    #full_enumeration <- TRUE
-  } #else{
-    #full_enumeration <- FALSE
-  #}
+  }
 
-  # conduct inference: calculate p-value
 
-  # send R objects to Julia,
-
+  # send R objects to Julia
   # assign all values needed in WildBootTests.jl
-  JuliaCall::julia_assign("Y", preprocess$Y)
+
+  JuliaCall::julia_assign("Y", as.numeric(preprocess$Y))
   JuliaCall::julia_assign("X", preprocess$X)
   R <- matrix(preprocess$R, 1, length(preprocess$R))
   JuliaCall::julia_assign("R", R)
@@ -316,7 +311,7 @@ boottest.lm <- function(object,
   clustid_mat <- (preprocess$model_frame[, all_c])
   clustid_mat <- as.matrix(sapply(clustid_mat, as.integer))
 
-  JuliaCall::julia_assign("clustid", clustid_mat)
+  JuliaCall::julia_assign("clustid_mat", clustid_mat)
 
   JuliaCall::julia_assign("weights", preprocess$weights)
   JuliaCall::julia_assign("fixed_effect", preprocess$fixed_effect)
@@ -362,7 +357,8 @@ boottest.lm <- function(object,
                                     (R, [beta0]);
                                     resp = Y,
                                     predexog = X,
-                                    clustid= clustid,
+                                    obswt = obswt,
+                                    clustid= clustid_mat,
                                     nbootclustvar = nbootclustvar,
                                     nerrclustvar = nerrclustvar,
                                     reps = reps,
@@ -371,40 +367,44 @@ boottest.lm <- function(object,
                                     getCI = getCI,
                                     level = level,
                                     imposenull = imposenull,
-                                    rng = rng,
                                     rtol = rtol
 
                         )")
 
 
+  # collect results:
+  p_val <- JuliaCall::julia_eval("p(boot_res)")
+  conf_int <- JuliaCall::julia_eval("CI(boot_res)")
+  t_stat <- JuliaCall::julia_eval("teststat(boot_res)")
+  #plot <- JuliaCall::julia_eval("plotpoints(boot_res)")
 
   res_final <- list(
     point_estimate = point_estimate,
-    p_val = JuliaCall::julia_eval("p(boot_res)"),
-    conf_int = JuliaCall::julia_eval("CI(boot_res)")#,
+    p_val = p_val,
+    conf_int = conf_int,
     # p_test_vals = res_p_val$p_grid_vals,
     # test_vals = res_p_val$grid_vals,
-    # t_stat = res$t_stat,
+    t_stat = t_stat,
     # t_boot = res$t_boot,
-    # regression = res$object,
-    # param = param,
-    # N = preprocess$N,
-    # B = B,
-    # clustid = clustid,
-    # # depvar = depvar,
-    # N_G = preprocess$N_G,
-    # sign_level = sign_level,
-    # call = call,
-    # type = type,
-    # impose_null = impose_null,
-    # R = R,
-    # beta0 = beta0
+    #regression = res$object,
+    param = param,
+    N = preprocess$N,
+    B = B,
+    clustid = clustid,
+     # depvar = depvar,
+    N_G = preprocess$N_G,
+    sign_level = sign_level,
+    call = call,
+    type = type,
+    impose_null = impose_null,
+    R = R,
+    beta0 = beta0
   )
 
 
   class(res_final) <- "boottest"
 
-  #invisible(res_final)
-  res_final
+  invisible(res_final)
+  #res_final
 }
 

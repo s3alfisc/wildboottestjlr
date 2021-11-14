@@ -73,7 +73,7 @@ By default "two-tailed". Other options include "equal-tailed", ">" and "<".}
 
 \item{tol}{Numeric vector of length 1. The desired accuracy
 (convergence tolerance) used in the root finding procedure to find the confidence interval.
-1e-6 by default.}
+Relative tolerance of 1e-6 by default.}
 
 \item{maxiter}{Integer. Maximum number of iterations used in the root finding procedure to find the confidence interval.
 10 by default.}
@@ -84,6 +84,8 @@ when fitting the regression object (e.g. if the cluster variable was not used
 when fitting the regression model).}
 
 \item{...}{Further arguments passed to or from other methods.}
+
+\item{float}{Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?}
 }
 \value{
 An object of class \code{boottest}
@@ -133,7 +135,8 @@ stops the procedure after 10 iterations.
 }
 
 \examples{
-library(fwildclusterboot)
+library(wildboottestjlr)
+wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 data(voters)
 lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
          data = voters)

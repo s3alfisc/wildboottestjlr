@@ -12,7 +12,7 @@
 #' @importFrom collapse fwithin
 #' @noRd
 
-preprocess2 <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
+preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
   # ---------------------------------------------------------------------------- #
   # Step 1: preprocessing of call

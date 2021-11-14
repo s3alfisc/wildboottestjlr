@@ -12,7 +12,7 @@
   bootcluster = "max",
   fe = NULL,
   conf_int = NULL,
-  seed = NULL,
+  rng = NULL,
   R = NULL,
   beta0 = 0,
   sign_level = NULL,
@@ -50,9 +50,7 @@ needs to be NULL.}
 \item{conf_int}{A logical vector. If TRUE, boottest computes confidence
 intervals by p-value inversion. If FALSE, only the p-value is returned.}
 
-\item{seed}{An integer. Allows the user to set a random seed. If NULL, \code{boottest()} sets an
-internal seed. Hence by default, calling \code{boottest()} multiple times on the same object will produce
-the same test statistics.}
+\item{rng}{An integer. Controls the random number generation, which is handled via the \code{StableRNG()} function from the \code{StableRNGs} Julia package.}
 
 \item{R}{Hypothesis Vector giving linear combinations of coefficients. Must be either NULL or a vector of the same length as \code{param}. If NULL, a vector of ones of length param.}
 
@@ -145,7 +143,8 @@ stops the procedure after 10 iterations.
 \examples{
 
 if(requireNamespace("lfe")){
-library(fwildclusterboot)
+library(wildboottestjlr)
+wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 library(lfe)
 data(voters)
 felm_fit <- felm(proposition_vote ~ treatment + ideology1 + log_income
@@ -170,7 +169,7 @@ boot4 <- boottest(felm_fit,
                   clustid = c("group_id1", "group_id2"),
                   fe = "Q1_immigration",
                   sign_level = 0.2,
-                  seed = 8,
+                  rng = 8,
                   beta0 = 2)
 # test treatment + ideology1 = 2
 boot5 <- boottest(felm_fit,

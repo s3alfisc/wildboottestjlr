@@ -25,9 +25,7 @@
 #'        returns 0.95% confidence intervals. By default, sign_level = 0.05.
 #' @param conf_int A logical vector. If TRUE, boottest computes confidence
 #'        intervals by p-value inversion. If FALSE, only the p-value is returned.
-#' @param seed An integer. Allows the user to set a random seed. If NULL, `boottest()` sets an
-#'        internal seed. Hence by default, calling `boottest()` multiple times on the same object will produce
-#'        the same test statistics.
+#' @param rng An integer. Controls the random number generation, which is handled via the `StableRNG()` function from the `StableRNGs` Julia package.
 #' @param R Hypothesis Vector giving linear combinations of coefficients. Must be either NULL or a vector of the same length as `param`. If NULL, a vector of ones of length param.
 #' @param beta0 A numeric. Shifts the null hypothesis
 #'        H0: param = beta0 vs H1: param != beta0
@@ -105,7 +103,8 @@
 #' @examples
 #'
 #' if(requireNamespace("lfe")){
-#' library(fwildclusterboot)
+#' library(wildboottestjlr)
+#' wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 #' library(lfe)
 #' data(voters)
 #' felm_fit <- felm(proposition_vote ~ treatment + ideology1 + log_income
@@ -130,7 +129,7 @@
 #'                   clustid = c("group_id1", "group_id2"),
 #'                   fe = "Q1_immigration",
 #'                   sign_level = 0.2,
-#'                   seed = 8,
+#'                   rng = 8,
 #'                   beta0 = 2)
 #' # test treatment + ideology1 = 2
 #' boot5 <- boottest(felm_fit,
@@ -152,7 +151,7 @@ boottest.felm <- function(object,
                           bootcluster = "max",
                           fe = NULL,
                           conf_int = NULL,
-                          seed = NULL,
+                          rng = NULL,
                           R = NULL,
                           beta0 = 0,
                           sign_level = NULL,
@@ -173,7 +172,7 @@ boottest.felm <- function(object,
   check_arg(B, "scalar integer ")
   check_arg(sign_level, "scalar numeric | NULL")
   check_arg(conf_int, "logical scalar | NULL")
-  check_arg(seed, "scalar integer | NULL")
+  check_arg(rng, "scalar integer | NULL")
   check_arg(R, "NULL| scalar numeric | numeric vector")
   check_arg(beta0, "numeric scalar | NULL")
   check_arg(fe, "character scalar | NULL")
@@ -181,11 +180,10 @@ boottest.felm <- function(object,
   check_arg(tol, "numeric scalar")
   check_arg(maxiter, "scalar integer")
 
-  # check appropriateness and assign nthreads
-  #nthreads <- check_set_nthreads(nthreads)
-
-  if(is.null(seed)){
-    seed <- 1
+  if(!is.null(rng)){
+    # if an rng value is provided, set the seed internally
+    rng_char <- paste0("StableRNGs.StableRNG(", rng, ");")
+    JuliaCall::julia_assign(rng_char)
   }
 
   if(maxiter < 1){
@@ -273,7 +271,7 @@ boottest.felm <- function(object,
   }
 
   # preprocess data: X, Y, weights, fixed effects
-  preprocess <- preprocess2(object = object,
+  preprocess <- preprocess(object = object,
                             cluster = clustid,
                             fe = fe,
                             param = param,
@@ -288,7 +286,7 @@ boottest.felm <- function(object,
   # number of clusters used in bootstrap - always derived from bootcluster
   N_G <- length(unique(preprocess$bootcluster[, 1]))
   N_G_2 <- 2^N_G
-  if (type %in% c("rademacher", "mammen") & N_G_2 < B) {
+  if (type %in% c("rademacher") & N_G_2 < B) {
     warning(paste("There are only", N_G_2, "unique draws from the rademacher distribution for", length(unique(preprocess$bootcluster[, 1])), "clusters. Therefore, B = ", N_G_2, " with full enumeration. Consider using webb weights instead."),
             call. = FALSE,
             noBreaks. = TRUE
@@ -297,71 +295,134 @@ boottest.felm <- function(object,
             call. = FALSE,
             noBreaks. = TRUE
     )
-    B <- N_G_2
-    full_enumeration <- TRUE
-  } else{
-    full_enumeration <- FALSE
   }
 
 
+  # send preprocessed objects to Julia
+  JuliaCall::julia_assign("Y", as.numeric(preprocess$Y))
+  JuliaCall::julia_assign("X", preprocess$X)
+  R <- matrix(preprocess$R, 1, length(preprocess$R))
+  JuliaCall::julia_assign("R", R)
+  JuliaCall::julia_assign("beta0", beta0)
+  JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
+  JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTests.jl demands integer
 
-  res <- boot_algo2(preprocess,
-    boot_iter = B,
-    point_estimate = point_estimate,
-    impose_null = impose_null,
-    beta0 = beta0,
-    sign_level = sign_level,
-    param = param,
-    seed = seed,
-    p_val_type = p_val_type,
-    nthreads = nthreads,
-    type = type,
-    full_enumeration = full_enumeration
-  )
+  # Order the columns of `clustid` this way:
+  # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
+  # 2. Variables used to define both bootstrapping and error clusters.
+  # 3. Variables only used to define error clusters.
+  # In the most common case, `clustid` is a single column of type 2.
 
+  if(length(bootcluster == 1) && bootcluster == "max"){
+    bootcluster <- clustid[which.max(N_G)]
+  } else if(length(bootcluster == 1) && bootcluster == "min"){
+    bootcluster <- clustid[which.min(N_G)]
+  }
 
+  c1 <- bootcluster[which(!(bootcluster %in% clustid))]
+  c2 <- clustid[which(clustid %in% bootcluster)]
+  c3 <- clustid[which(!(clustid %in% bootcluster))]
+  all_c <- c(c1, c2, c3)
+  #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
 
-  # compute confidence sets
-  if (is.null(conf_int) || conf_int == TRUE) {
+  JuliaCall::julia_assign("nbootclustvar", length(bootcluster))
+  JuliaCall::julia_assign("nerrclustvar", length(clustid))
 
-    if(impose_null == TRUE){
-      # should always be positive, point_estimate and t_stat need to have same sign
-      se_guess <- abs(point_estimate / res$t_stat)
-    } else if(impose_null == FALSE){
-      se_guess <- abs((point_estimate - beta0) / res$t_stat)
-    }
+  # note that c("group_id1", NULL) == "group_id1"
+  clustid_mat <- (preprocess$model_frame[, all_c])
+  clustid_mat <- as.matrix(sapply(clustid_mat, as.integer))
 
-    res_p_val <- invert_p_val(
-      object = res,
-      boot_iter = B,
-      point_estimate = point_estimate,
-      se_guess = se_guess,
-      clustid = preprocess$clustid,
-      sign_level = sign_level,
-      vcov_sign = preprocess$vcov_sign,
-      impose_null = impose_null,
-      p_val_type = p_val_type,
-      maxiter = maxiter,
-      tol = tol
-    )
+  JuliaCall::julia_assign("clustid_mat", clustid_mat)
+
+  JuliaCall::julia_assign("weights", preprocess$weights)
+  JuliaCall::julia_assign("fixed_effect", preprocess$fixed_effect)
+  JuliaCall::julia_assign("bootcluster", preprocess$bootcluster)
+  JuliaCall::julia_assign("level", 1 - sign_level)
+  JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
+  JuliaCall::julia_assign("obswt", preprocess$weights) # check if this is a vector of ones or NULL if no weights specified
+  JuliaCall::julia_assign("imposenull", ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE))
+  JuliaCall::julia_assign("maxiter", maxiter)
+  JuliaCall::julia_assign("rtol", tol)
+
+  if(p_val_type == "two-tailed"){
+    JuliaCall::julia_command("ptype = WildBootTests.symmetric;")
+  } else if(p_val_type == "equal_tailed"){
+    JuliaCall::julia_command("ptype = WildBootTests.equaltail;")
+  } else if(p_val_type == ">"){
+    JuliaCall::julia_command("ptype = WildBootTests.upper;")
+  } else if(p_val_type == "<"){
+    JuliaCall::julia_command("ptype = WildBootTests.lower;")
+  }
+
+  if(type == "rademacher"){
+    JuliaCall::julia_command("v = WildBootTests.rademacher;")
+  } else if(type == "mammen"){
+    JuliaCall::julia_command("v = WildBootTests.mammen;")
+  } else if(type == "norm"){
+    JuliaCall::julia_command("v = WildBootTests.normal;")
+  } else if(type == "webb"){
+    JuliaCall::julia_command("v = WildBootTests.webb;")
+  }
+
+  if(!is.null(fe)){
+
+    # send feid / fixed effect to Julia
+    JuliaCall::julia_assign("feid", as.matrix(preprocess$fixed_effect))
+
+    JuliaCall::julia_eval("boot_res = wildboottest(
+                                    (R, [beta0]);
+                                    resp = Y,
+                                    predexog = X,
+                                    feid = feid,
+                                    obswt = obswt,
+                                    clustid= clustid_mat,
+                                    nbootclustvar = nbootclustvar,
+                                    nerrclustvar = nerrclustvar,
+                                    reps = reps,
+                                    auxwttype=v,
+                                    ptype = ptype,
+                                    getCI = getCI,
+                                    level = level,
+                                    imposenull = imposenull,
+                                    rtol = rtol
+
+                        )")
   } else {
-    res_p_val <- list(
-      conf_int = NA,
-      p_test_vals = NA,
-      test_vals = NA
-    )
+    JuliaCall::julia_eval("boot_res = wildboottest(
+                                    (R, [beta0]);
+                                    resp = Y,
+                                    predexog = X,
+                                    obswt = obswt,
+                                    clustid= clustid_mat,
+                                    nbootclustvar = nbootclustvar,
+                                    nerrclustvar = nerrclustvar,
+                                    reps = reps,
+                                    auxwttype=v,
+                                    ptype = ptype,
+                                    getCI = getCI,
+                                    level = level,
+                                    imposenull = imposenull,
+                                    rtol = rtol
+
+                        )")
   }
 
+
+  # collect results:
+  p_val <- JuliaCall::julia_eval("p(boot_res)")
+  conf_int <- JuliaCall::julia_eval("CI(boot_res)")
+  t_stat <- JuliaCall::julia_eval("teststat(boot_res)")
+  #plot <- JuliaCall::julia_eval("plotpoints(boot_res)")
 
   res_final <- list(
     point_estimate = point_estimate,
-    p_val = res[["p_val"]],
-    conf_int = res_p_val$conf_int,
-    p_test_vals = res_p_val$p_grid_vals,
-    test_vals = res_p_val$grid_vals,
-    t_stat = res$t_stat,
-    t_boot = res$t_boot,
-    regression = res$object,
+    p_val = p_val,
+    conf_int = conf_int,
+    # p_test_vals = res_p_val$p_grid_vals,
+    # test_vals = res_p_val$grid_vals,
+    t_stat = t_stat,
+    # t_boot = res$t_boot,
+    #regression = res$object,
     param = param,
     N = preprocess$N,
     B = B,
@@ -375,7 +436,6 @@ boottest.felm <- function(object,
     R = R,
     beta0 = beta0
   )
-
 
 
   class(res_final) <- "boottest"
