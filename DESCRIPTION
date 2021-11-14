@@ -1,13 +1,21 @@
 Package: wildboottestjlr
-Title: Fast Wild Cluster Bootstrap Inference via WildBootTest.jl 
+Title: Fast Wild Cluster Bootstrap Inference in R via JuliaCall and WildBootTest.jl 
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    c(
+    person(given = "Fischer",
+           family = "Alexander",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           email = "alexander-fischer1801@t-online.de"),
+     person(given = "David", 
+           family = "Roodman", 
+           role = "aut")
+    )
+Description: This package is an R port to WildBootTests.jl, which performs wild bootstrap-based hypothesis tests in Julia at extreme speed.
+             It is intended mainly for linear models: ordinary least squares (OLS) and instrumental variables/two-stage least squares (IV/2SLS). 
+             For an introduction to the wild bootstrap and the algorithms deployed in WildBootTest.jl, see Roodman et al. (2019).
+             Right now, wildboottestjlr allows R users to call functionality in WildBootTests.jl on objects of type lm and ivreg (from base/stats and the 
+             ivreg package).
 Imports: 
     JuliaCall,
     Formula,
