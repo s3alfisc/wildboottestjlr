@@ -1,5 +1,6 @@
 ---
 output: github_document
+always_allow_html: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -13,93 +14,98 @@ knitr::opts_chunk$set(
 )
 ```
 
+<!-- badges: start -->
+<!-- [![packageversion](https://img.shields.io/badge/Package%20version-`r version`-orange.svg?style=flat-square)](commits/master) -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
+<!-- [![CRAN status](https://www.r-pkg.org/badges/version/fwildclusterboot)](https://CRAN.R-project.org/package=fwildclusterboot) -->
+<!-- ![runiverse-package](https://s3alfisc.r-universe.dev/badges/fwildclusterboot) -->
+<!-- [![R-CMD-check](https://github.com/s3alfisc/fwildclusterboot/workflows/R-CMD-check/badge.svg)](https://github.com/s3alfisc/fwildclusterboot/actions) -->
+<!-- [![Codecov test coverage](https://codecov.io/gh/s3alfisc/fwildclusterboot/branch/master/graph/badge.svg)](https://app.codecov.io/gh/s3alfisc/fwildclusterboot?branch=master) -->
+<!-- `r badger::badge_cran_download("fwildclusterboot", "grand-total", "blue")` -->
+<!-- `r badger::badge_cran_download("fwildclusterboot", "last-month", "green")` -->
+<!-- [![minimal R version](https://img.shields.io/badge/R%3E%3D-4.0.0-6666ff.svg)](https://cran.r-project.org/) -->
+
+<!-- badges: end -->
+
 # wildboottestjlr
+
+`wildboottestjlr` ports the functionality of the [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package to R via the `JuliaCall` package. 
+
+It currently supports wild bootstrap inference for OLS and IV models via 
+
++ OLS: `lm`, `fixest`, `lfe`
++ IV: `ivreg`. 
+
+In the future, IV methods for `fixest` and `lfe` will be added.
+
 
 ## Installation
 
-Julia needs to be installed. 
+You can install Julia by following the steps described here: https://julialang.org/downloads/. 
 
-``` r
-# clone wildboottestjlr from github
-# then 
-# devtools::install(path_to_wildboottestjlr)
+`wildboottestjlr` can be installed by running
 
+```{r, eval = FALSE}
+library(devtools)
+install_github("s3alfisc/wildboottestjlr")
 ```
+
+
 ## Example 
 
-To initiate the package, run
+To initiate Julia and load `WildBootTests.jl`, run
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 library(wildboottestjlr)
 wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
-# if WildBootTest.jl is not installed, run 
-#wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Program#s/Julia-1.6.3/bin", install_WildBooTestjl = TRUE)
-
 ```
 
+`wildboottestjlr's` central function is called `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the `fwildclusterboot` package.
 
-This will initiate Julia and load WildBootTest.jl. `wildboottestjlr_setup()` will have to run once for each r session.
 
-The `set_julia_seed()` function allows to set a "global" seed within the Julia session:
-
-```{r}
+```{r, message = FALSE, warning = FALSE}
+# set a 'global' seed in the Julia session
 set_julia_seed(rng = 12313452435)
-```
 
-Note: currently, only a method for `lm` is implemented. The `boottest.lm()` method only works for simple cases (one-way clustering, not all of boottest's functionality is currently supported). 
-
-```{r}
 data(voters)
+library(fixest)
+library(lfe)
+
+# estimation via lm(), fixest::feols() or lfe::felm()
 lm_fit <- lm(proposition_vote ~ treatment  + log_income, data = voters)
-boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
+feols_fit <- feols(proposition_vote ~ treatment  + log_income, data = voters)
+felm_fit <- felm(proposition_vote ~ treatment  + log_income, data = voters)
+
+boot_lm <- boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment", rng = 7651427)
+boot_feols <- boottest(feols_fit, clustid = "group_id1", B = 999, param = "treatment", rng = 7651427)
+boot_felm <- boottest(felm_fit, clustid = "group_id1", B = 999, param = "treatment", rng = 7651427)
+
+# summarize results via summary() method
+summary(boot_lm)
+
+# also possible: use msummary() from modelsummary package
+library(modelsummary)
+msummary(list(boot_lm, boot_feols, boot_felm), 
+        estimate = "{estimate} ({p.value})", 
+        statistic = "[{conf.low}, {conf.high}]"
+        )  
+```
+
+If `boottest()` is applied based on an object of type `ivreg`, the WCE bootstrap [Davidson & MacKinnon (2010)](https://www.tandfonline.com/doi/abs/10.1198/jbes.2009.07221) is run. This is currently not working, see the discussion in issue '#7 IV Implementation: Task List'. 
+
+```{r, message = FALSE, warning = FALSE}
+library(ivreg)
+data("SchoolingReturns", package = "ivreg")
+data <- SchoolingReturns
+head(data)
+data$parents14 <- as.factor(data$parents14)
+
+object <- ivreg(log(wage) ~ education + poly(experience, 2) + ethnicity + smsa + south + parents14 |
+                  nearcollege + poly(age, 2) + ethnicity + smsa + south + parents14,
+                data = data)
+# wildboottestjlr:::boottest.ivreg(object = object, B = 999, param = "education", clustid = "south")
 
 ```
 
-How does it compare to ´fwildclusterboot´ ?
-
-```{r}
-library(fwildclusterboot)
-res <- fwildclusterboot::boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
-summary(res)
-
-
-```
-
-### Tests 
-
-Tests that compare `wildboottestjlr` to `fwildclusterboot` can be found in the "inst" folder.
-
-### Debug
-
-Code to debug `wildbottestjlr::boottest`. If you set all these variables, you can run all code inside the function line by line: 
-
-```{r}
-library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
-set_julia_seed(rng = 12313452435)
-data(voters)
-lm_fit <- lm(proposition_vote ~ treatment  + log_income + Q1_immigration, data = voters)
-boottest(lm_fit, clustid = "group_id1", B = 999, param = "treatment")
-
-object <- lm_fit
-clustid <- "group_id1"
-param <- "treatment"
-B <- 999
-bootcluster = c("group_id1", "Q1_immigration")
-conf_int = NULL
-rng = NULL
-R = NULL
-beta0 = 0
-sign_level = NULL
-type = "rademacher"
-impose_null = TRUE
-p_val_type = "two-tailed"
-tol = 1e-6
-maxiter = 10
-na_omit = TRUE
-
-devtools::load_all("C:/Users/alexa/Dropbox/wildboottestjlr/R")
-
-```
 
 
