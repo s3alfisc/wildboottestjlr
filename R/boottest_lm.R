@@ -280,8 +280,8 @@ boottest.lm <- function(object,
 
   JuliaCall::julia_assign("Y", as.numeric(preprocess$Y))
   JuliaCall::julia_assign("X", preprocess$X)
-  R <- matrix(preprocess$R, 1, length(preprocess$R))
-  JuliaCall::julia_assign("R", R)
+  R_vec <- matrix(preprocess$R, 1, length(preprocess$R))
+  JuliaCall::julia_assign("R", R_vec)
   JuliaCall::julia_assign("beta0", beta0)
   JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
   JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTests.jl demands integer
