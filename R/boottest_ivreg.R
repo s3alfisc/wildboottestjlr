@@ -124,7 +124,7 @@ boottest.ivreg <- function(object,
   # if an rng value is provided, set the seed internally
   if(!is.null(rng)){
     rng_char <- paste0("rng = StableRNGs.StableRNG(", rng, ");")
-    JuliaCall::julia_command(rng_char)
+    JuliaCall::julia_eval(rng_char)
   }
 
   if(maxiter < 1){

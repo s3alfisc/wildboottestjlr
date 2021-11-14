@@ -39,7 +39,7 @@ It currently supports wild bootstrap inference for OLS and IV models via
 In the future, IV methods for `fixest` and `lfe` will be added.
 
 
-## Installation
+## Installation / Getting Started
 
 You can install Julia by following the steps described here: https://julialang.org/downloads/. 
 
@@ -50,15 +50,23 @@ library(devtools)
 install_github("s3alfisc/wildboottestjlr")
 ```
 
-
-## Example 
-
 To initiate Julia and load `WildBootTests.jl`, run
 
 ```{r, message = FALSE, warning = FALSE}
 library(wildboottestjlr)
 wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 ```
+
+If `WildBoottests.jl` is not yet installed, you can install it by replacing the above with 
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(wildboottestjlr)
+wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin", install_jl_packages = TRUE)
+```
+
+which will install `WildBootTests.jl` and all its Julia dependencies. 
+
+## Example 
 
 `wildboottestjlr's` central function is called `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the `fwildclusterboot` package.
 
@@ -81,7 +89,7 @@ boot_feols <- boottest(feols_fit, clustid = "group_id1", B = 999, param = "treat
 boot_felm <- boottest(felm_fit, clustid = "group_id1", B = 999, param = "treatment", rng = 7651427)
 
 # summarize results via summary() method
-summary(boot_lm)
+#summary(boot_lm)
 
 # also possible: use msummary() from modelsummary package
 library(modelsummary)
@@ -91,19 +99,20 @@ msummary(list(boot_lm, boot_feols, boot_felm),
         )  
 ```
 
-If `boottest()` is applied based on an object of type `ivreg`, the WCE bootstrap [Davidson & MacKinnon (2010)](https://www.tandfonline.com/doi/abs/10.1198/jbes.2009.07221) is run. This is currently not working, see the discussion in issue '#7 IV Implementation: Task List'. 
+If `boottest()` is applied based on an object of type `ivreg`, the WCE bootstrap [Davidson & MacKinnon (2010)](https://www.tandfonline.com/doi/abs/10.1198/jbes.2009.07221) is run. Due to a currently undiscovered bug, this is only working for one-instrument models, see the discussion in issue '#7 IV Implementation: Task List'. 
 
 ```{r, message = FALSE, warning = FALSE}
 library(ivreg)
 data("SchoolingReturns", package = "ivreg")
 data <- SchoolingReturns
-head(data)
-data$parents14 <- as.factor(data$parents14)
 
-object <- ivreg(log(wage) ~ education + poly(experience, 2) + ethnicity + smsa + south + parents14 |
-                  nearcollege + poly(age, 2) + ethnicity + smsa + south + parents14,
+ivreg_fit <- ivreg(log(wage) ~ education + age + ethnicity + smsa + south + parents14 |
+                  nearcollege + age  + ethnicity + smsa + south + parents14,
                 data = data)
-# wildboottestjlr:::boottest.ivreg(object = object, B = 999, param = "education", clustid = "south")
+
+boot_ivreg <- boottest(object = ivreg_fit, B = 999, param = "education", clustid = "fameducation", type = "webb")
+
+summary(boot_ivreg)
 
 ```
 

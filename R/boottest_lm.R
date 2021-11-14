@@ -166,9 +166,8 @@ boottest.lm <- function(object,
   #nthreads <- check_set_nthreads(nthreads)
 
   if(!is.null(rng)){
-    # if an rng value is provided, set the seed internally
     rng_char <- paste0("rng = StableRNGs.StableRNG(", rng, ");")
-    JuliaCall::julia_assign(rng_char)
+    JuliaCall::julia_eval(rng_char)
   }
 
   if(maxiter < 1){
