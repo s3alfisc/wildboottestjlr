@@ -21,6 +21,8 @@
   tol = 1e-06,
   maxiter = 10,
   na_omit = TRUE,
+  float = "Float32",
+  small_sample_adjustment = TRUE,
   ...
 )
 }
@@ -83,9 +85,11 @@ variables in the cluster variable that have not previously been deleted
 when fitting the regression object (e.g. if the cluster variable was not used
 when fitting the regression model).}
 
-\item{...}{Further arguments passed to or from other methods.}
-
 \item{float}{Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?}
+
+\item{small_sample_adjustment}{Logical. True by default. Should small sample adjustments be applied?}
+
+\item{...}{Further arguments passed to or from other methods.}
 }
 \value{
 An object of class \code{boottest}
