@@ -40,16 +40,15 @@
 #' @param tol Numeric vector of length 1. The desired accuracy
 #'        (convergence tolerance) used in the root finding procedure to find the confidence interval.
 #'        Relative tolerance of 1e-6 by default.
-#' @param maxiter Integer. Maximum number of iterations used in the root finding procedure to find the confidence interval.
-#'        10 by default.
 #' @param na_omit Logical. If TRUE, `boottest()` omits rows with missing
 #'        variables in the cluster variable that have not previously been deleted
 #'        when fitting the regression object (e.g. if the cluster variable was not used
 #'        when fitting the regression model).
-#' @param float Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
-#'
+#' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
+#' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param ... Further arguments passed to or from other methods.
 #'
+#' @import JuliaConnectoR
 #' @importFrom dreamerr check_arg validate_dots
 #'
 #' @method boottest lm
@@ -143,8 +142,9 @@ boottest.lm <- function(object,
                         impose_null = TRUE,
                         p_val_type = "two-tailed",
                         tol = 1e-6,
-                        maxiter = 10,
                         na_omit = TRUE,
+                        floattype = "Float32",
+                        small_sample_adjustment = TRUE,
                         ...) {
 
   call <- match.call()
@@ -160,19 +160,12 @@ boottest.lm <- function(object,
   check_arg(beta0, "numeric scalar | NULL")
   check_arg(bootcluster, "character vector")
   check_arg(tol, "numeric scalar")
-  check_arg(maxiter, "scalar integer")
+  check_arg(floattype, "character scalar")
+  check_arg(small_sample_adjustment, "scalar logical")
 
-  # check appropriateness of nthreads
-  #nthreads <- check_set_nthreads(nthreads)
 
-  if(!is.null(rng)){
-    rng_char <- paste0("rng = StableRNGs.StableRNG(", rng, ");")
-    JuliaCall::julia_eval(rng_char)
-  }
-
-  if(maxiter < 1){
-    stop("The function argument maxiter needs to be larger than 1.",
-         call. = FALSE)
+  if(!(floattype %in% c("Float32", "Float64"))){
+    stop("floattype needs either to be 'Float32' or 'Float64'.")
   }
 
   if(tol < 0){
@@ -244,12 +237,12 @@ boottest.lm <- function(object,
 
   # preprocess data: X, Y, weights, fixed effects
   preprocess <- preprocess(object = object,
-                            cluster = clustid,
-                            fe = NULL,
-                            param = param,
-                            bootcluster = bootcluster,
-                            na_omit = na_omit,
-                            R = R)
+                           cluster = clustid,
+                           fe = NULL,
+                           param = param,
+                           bootcluster = bootcluster,
+                           na_omit = na_omit,
+                           R = R)
 
 
   clustid_dims <- preprocess$clustid_dims
@@ -277,13 +270,11 @@ boottest.lm <- function(object,
   # send R objects to Julia
   # assign all values needed in WildBootTests.jl
 
-  JuliaCall::julia_assign("Y", as.numeric(preprocess$Y))
-  JuliaCall::julia_assign("X", preprocess$X)
-  R_vec <- matrix(preprocess$R, 1, length(preprocess$R))
-  JuliaCall::julia_assign("R", R_vec)
-  JuliaCall::julia_assign("beta0", beta0)
-  JuliaCall::julia_eval("H0 = (R, beta0)")  # create a julia tuple for null hypothesis
-  JuliaCall::julia_assign("reps", as.integer(B)) # WildBootTests.jl demands integer
+  resp <- as.numeric(preprocess$Y)
+  predexog <- preprocess$X
+  R <- matrix(preprocess$R, 1, length(preprocess$R))
+  r <-matrix(beta0, 1, 1)
+  reps <- as.integer(B) # WildBootTests.jl demands integer
 
   # Order the columns of `clustid` this way:
   # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
@@ -303,79 +294,85 @@ boottest.lm <- function(object,
   all_c <- c(c1, c2, c3)
   #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
 
-  JuliaCall::julia_assign("nbootclustvar", length(bootcluster))
-  JuliaCall::julia_assign("nerrclustvar", length(clustid))
+  nbootclustvar <- length(bootcluster)
+  nerrclustvar <- length(clustid)
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
-  clustid_mat <- as.matrix(sapply(clustid_mat, as.integer))
+  clustid <- as.matrix(sapply(clustid_mat, as.integer))
 
-  JuliaCall::julia_assign("clustid_mat", clustid_mat)
+  obswt <-  preprocess$weights
+  feid <- preprocess$fixed_effect
+  level <-  1 - sign_level
+  getCI <- ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE)
+  imposenull <- ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE)
+  rtol <- tol
+  small <- small_sample_adjustment
 
-  JuliaCall::julia_assign("weights", preprocess$weights)
-  JuliaCall::julia_assign("fixed_effect", preprocess$fixed_effect)
-  JuliaCall::julia_assign("bootcluster", preprocess$bootcluster)
-  JuliaCall::julia_assign("level", 1 - sign_level)
-  JuliaCall::julia_assign("getCI", ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE))
-  JuliaCall::julia_assign("obswt", preprocess$weights) # check if this is a vector of ones or NULL if no weights specified
-  JuliaCall::julia_assign("imposenull", ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE))
-  JuliaCall::julia_assign("maxiter", maxiter)
-  JuliaCall::julia_assign("rtol", tol)
+  JuliaConnectoR::juliaEval('using WildBootTests')
+  JuliaConnectoR::juliaEval('using Random')
 
-  # only for felm, feols
-  # JuliaCall::julia_assign("feid", preprocess$fixed_effect)
+  WildBootTests <- JuliaConnectoR::juliaImport("WildBootTests")
 
-  # if(float == "Float32"){
-  #   JuliaCall::julia_command("T = Base.Float32;")
-  # } else if(float == "Float64"){
-  #   JuliaCall::julia_command("T = Base.Float64;")
-  # }
+  paste_enumerated_args <- function(type = "rademacher", ptype = "two-tailed", rng = NULL){
 
+    #' function to paste all 'enumerated type' julia arguments together
 
-  if(p_val_type == "two-tailed"){
-    JuliaCall::julia_command("ptype = WildBootTests.symmetric;")
-  } else if(p_val_type == "equal_tailed"){
-    JuliaCall::julia_command("ptype = WildBootTests.equaltail;")
-  } else if(p_val_type == ">"){
-    JuliaCall::julia_command("ptype = WildBootTests.upper;")
-  } else if(p_val_type == "<"){
-    JuliaCall::julia_command("ptype = WildBootTests.lower;")
+    enumerated_type <-
+      switch(type,
+             rademacher = "WildBootTests.rademacher",
+             mammen = "WildBootTests.mammen",
+             norm = "WildBootTests.normal",
+             webb = "WildBootTests.webb",
+             enumerated_type
+      )
+
+    enumerated_ptype <-
+      switch(ptype,
+             "two-tailed" = "WildBootTests.symmetric",
+             "equal_tailed" = "WildBootTests.equaltail",
+             ">" = "WildBootTests.upper",
+             "<" = "WildBootTests.lower",
+             enumerated_ptype
+      )
+
+    if(is.null(rng)){
+      rng <- "Random.MersenneTwister()"
+    } else{
+      rng <- paste0("Random.MersenneTwister(", rng, ")")
+    }
+
+    paste0("auxwttype = ",enumerated_type,
+           ", ptype = ", enumerated_ptype,
+           ", rng = ", rng)
+
   }
 
-  if(type == "rademacher"){
-    JuliaCall::julia_command("v = WildBootTests.rademacher;")
-  } else if(type == "mammen"){
-    JuliaCall::julia_command("v = WildBootTests.mammen;")
-  } else if(type == "norm"){
-    JuliaCall::julia_command("v = WildBootTests.normal;")
-  } else if(type == "webb"){
-    JuliaCall::julia_command("v = WildBootTests.webb;")
-  }
+  positional_args <- paste0(floattype,",","[", paste0(R, collapse = " "),"],", "[", r, "]")
+  named_args <- 'resp, predexog, clustid, obswt, level, getCI, imposenull, rtol, small'
+  enumerated_args <- paste_enumerated_args(type = "rademacher", ptype = "two-tailed", rng = 231235123)
 
-  JuliaCall::julia_eval("boot_res = wildboottest(
-                                    (R, [beta0]);
-                                    resp = Y,
-                                    predexog = X,
-                                    obswt = obswt,
-                                    clustid= clustid_mat,
-                                    nbootclustvar = nbootclustvar,
-                                    nerrclustvar = nerrclustvar,
-                                    reps = reps,
-                                    auxwttype=v,
-                                    ptype = ptype,
-                                    getCI = getCI,
-                                    level = level,
-                                    imposenull = imposenull,
-                                    rtol = rtol
+  juliaLet_char <- paste0('wildboottest(', positional_args,';', named_args ,',', enumerated_args, ")")
 
-                        )")
+  # run wildboottest()
+  wildboottest_res <- JuliaConnectoR::juliaLet(juliaLet_char,
+                               resp = resp,
+                               predexog = predexog,
+                               clustid = clustid,
+                               obswt = obswt,
+                               level = level,
+                               getCI = getCI,
+                               imposenull = imposenull,
+                               rtol = rtol,
+                               small = small
+                               )
+
 
 
   # collect results:
-  p_val <- JuliaCall::julia_eval("p(boot_res)")
-  conf_int <- JuliaCall::julia_eval("CI(boot_res)")
-  t_stat <- JuliaCall::julia_eval("teststat(boot_res)")
-  #plot <- JuliaCall::julia_eval("plotpoints(boot_res)")
+  p_val <- WildBootTests$p(wildboottest_res)
+  conf_int <- WildBootTests$CI(wildboottest_res)
+  t_stat <- WildBootTests$teststat(wildboottest_res)
 
   res_final <- list(
     point_estimate = point_estimate,
@@ -390,7 +387,7 @@ boottest.lm <- function(object,
     N = preprocess$N,
     B = B,
     clustid = clustid,
-     # depvar = depvar,
+    # depvar = depvar,
     N_G = preprocess$N_G,
     sign_level = sign_level,
     call = call,
@@ -406,4 +403,5 @@ boottest.lm <- function(object,
   invisible(res_final)
   #res_final
 }
+
 

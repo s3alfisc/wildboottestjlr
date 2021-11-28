@@ -17,6 +17,7 @@ Description: This package is an R port to WildBootTests.jl, which performs wild 
              Right now, wildboottestjlr allows R users to call functionality in WildBootTests.jl on objects of type lm and ivreg (from base/stats and the 
              ivreg package).
 Imports: 
+    JuliaConnectoR,
     JuliaCall,
     Formula,
     dreamerr,
@@ -39,4 +40,4 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
-SystemRequirements: Julia (>= 0.6.0), WildBootTest.jl, StableRNGs.jl
+SystemRequirements: Julia (>= 1.0), WildBootTests.jl, StableRNGs.jl

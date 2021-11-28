@@ -19,7 +19,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 `wildboottestjlr` ports the functionality of the
 [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package
-to R via the `JuliaCall` package.
+to R via the `JuliaConnectoR` package.
 
 It currently supports wild bootstrap inference for OLS and IV models via
 
@@ -40,23 +40,6 @@ library(devtools)
 install_github("s3alfisc/wildboottestjlr")
 ```
 
-To initiate Julia and load `WildBootTests.jl`, run
-
-``` r
-library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
-```
-
-If `WildBoottests.jl` is not yet installed, you can install it by
-replacing the above with
-
-``` r
-library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin", install_jl_packages = TRUE)
-```
-
-which will install `WildBootTests.jl` and all its Julia dependencies.
-
 ## Example
 
 `wildboottestjlr's` central function is called `boottest()`. Beyond few
@@ -65,7 +48,11 @@ minor differences, it largely mirrors the `boottest()` function from the
 
 ``` r
 # set a 'global' seed in the Julia session
+library(wildboottestjlr)
+
 set_julia_seed(rng = 12313452435)
+#> <Julia object of type MersenneTwister>
+#> MersenneTwister(12313452435)
 
 data(voters)
 library(fixest)
@@ -113,26 +100,26 @@ Model 3
 1\*treatment = 0
 </td>
 <td style="text-align:center;">
-0.089 (0.002)
+0.089 (0.004)
 </td>
 <td style="text-align:center;">
-0.089 (0.000)
+0.089 (0.004)
 </td>
 <td style="text-align:center;">
-0.089 (0.000)
+0.089 (0.004)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;box-shadow: 0px 1px">
 </td>
 <td style="text-align:center;box-shadow: 0px 1px">
-\[0.039, 0.137\]
+\[0.038, 0.139\]
 </td>
 <td style="text-align:center;box-shadow: 0px 1px">
-\[0.040, 0.139\]
+\[0.038, 0.139\]
 </td>
 <td style="text-align:center;box-shadow: 0px 1px">
-\[0.041, 0.137\]
+\[0.038, 0.139\]
 </td>
 </tr>
 <tr>
@@ -263,14 +250,14 @@ summary(boot_ivreg)
 #> boottest.ivreg(object = ivreg_fit, clustid = "fameducation", 
 #>     param = "education", B = 999, type = "webb")
 #>  
-#>  Hypothesis: 1*education = 0
+#>  Hypothesis: 0*education+0*education+0*education+0*education+0*education+0*education+0*education+0*education+1*education = 0
 #>  Observations: 3010
 #>  Bootstr. Iter: 999
 #>  Bootstr. Type: webb
-#>  Clustering: 1-way
+#>  Clustering: 3010-way
 #>  Confidence Sets: 95%
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.016    0.018      0.22
+#> 1 1*education = 0     0.09     2.201   0.012    0.019     0.264
 ```

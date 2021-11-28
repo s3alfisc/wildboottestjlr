@@ -29,7 +29,7 @@ knitr::opts_chunk$set(
 
 # wildboottestjlr
 
-`wildboottestjlr` ports the functionality of the [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package to R via the `JuliaCall` package. 
+`wildboottestjlr` ports the functionality of the [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package to R via the `JuliaConnectoR` package. 
 
 It currently supports wild bootstrap inference for OLS and IV models via 
 
@@ -50,22 +50,6 @@ library(devtools)
 install_github("s3alfisc/wildboottestjlr")
 ```
 
-To initiate Julia and load `WildBootTests.jl`, run
-
-```{r, message = FALSE, warning = FALSE}
-library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
-```
-
-If `WildBoottests.jl` is not yet installed, you can install it by replacing the above with 
-
-```{r, eval = FALSE, message = FALSE, warning = FALSE}
-library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin", install_jl_packages = TRUE)
-```
-
-which will install `WildBootTests.jl` and all its Julia dependencies. 
-
 ## Example 
 
 `wildboottestjlr's` central function is called `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the `fwildclusterboot` package.
@@ -73,6 +57,8 @@ which will install `WildBootTests.jl` and all its Julia dependencies.
 
 ```{r, message = FALSE, warning = FALSE}
 # set a 'global' seed in the Julia session
+library(wildboottestjlr)
+
 set_julia_seed(rng = 12313452435)
 
 data(voters)
@@ -113,7 +99,6 @@ ivreg_fit <- ivreg(log(wage) ~ education + age + ethnicity + smsa + south + pare
 boot_ivreg <- boottest(object = ivreg_fit, B = 999, param = "education", clustid = "fameducation", type = "webb")
 
 summary(boot_ivreg)
-
 ```
 
 

@@ -4,7 +4,8 @@ set_julia_seed <- function(rng){
   #' @param rng An integer that controls the random number generation
   #' @export
 
-  rng_char <- paste0("rng = StableRNGs.StableRNG(", rng, ");")
-  JuliaCall::julia_command(rng_char)
+  JuliaConnectoR::juliaEval('using Random')
+  rng_char <- paste0("Random.MersenneTwister(", rng, ")")
+  JuliaConnectoR::juliaEval(rng_char)
 
 }

@@ -19,9 +19,8 @@
   impose_null = TRUE,
   p_val_type = "two-tailed",
   tol = 1e-06,
-  maxiter = 10,
   na_omit = TRUE,
-  float = "Float32",
+  floattype = "Float32",
   small_sample_adjustment = TRUE,
   ...
 )
@@ -77,15 +76,12 @@ By default "two-tailed". Other options include "equal-tailed", ">" and "<".}
 (convergence tolerance) used in the root finding procedure to find the confidence interval.
 Relative tolerance of 1e-6 by default.}
 
-\item{maxiter}{Integer. Maximum number of iterations used in the root finding procedure to find the confidence interval.
-10 by default.}
-
 \item{na_omit}{Logical. If TRUE, \code{boottest()} omits rows with missing
 variables in the cluster variable that have not previously been deleted
 when fitting the regression object (e.g. if the cluster variable was not used
 when fitting the regression model).}
 
-\item{float}{Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?}
+\item{floattype}{Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?}
 
 \item{small_sample_adjustment}{Logical. True by default. Should small sample adjustments be applied?}
 
@@ -168,6 +164,7 @@ boot4 <- boottest(lm_fit,
                   beta0 = 2)
 summary(boot1)
 plot(boot1)
+function to paste all 'enumerated type' julia arguments together
 }
 \references{
 Roodman et al., 2019, "Fast and wild: Bootstrap inference in

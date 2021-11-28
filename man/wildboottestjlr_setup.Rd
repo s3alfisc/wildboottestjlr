@@ -2,17 +2,15 @@
 % Please edit documentation in R/wildboottestjlr_setup.R
 \name{wildboottestjlr_setup}
 \alias{wildboottestjlr_setup}
-\title{Connect R and Julia via JuliaCall & installs Julia dependency packages (if required)}
+\title{Connect R and Julia via JuliaConnectoR & installs Julia dependency packages (if required)}
 \usage{
-wildboottestjlr_setup(path_to_julia, install_jl_packages = FALSE, ...)
+wildboottestjlr_setup(install_jl_packages = FALSE, ...)
 }
 \arguments{
-\item{path_to_julia}{The path to the local Julia installation}
-
 \item{install_jl_packages}{Logical. If TRUE, all required Julia packages are installed}
 
 \item{...}{additional function arguments}
 }
 \description{
-Connect R and Julia via JuliaCall & installs Julia dependency packages (if required)
+Connect R and Julia via JuliaConnectoR & installs Julia dependency packages (if required)
 }
