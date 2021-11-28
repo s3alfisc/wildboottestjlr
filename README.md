@@ -46,6 +46,8 @@ install_github("s3alfisc/wildboottestjlr")
 minor differences, it largely mirrors the `boottest()` function from the
 `fwildclusterboot` package.
 
+### The Wild Bootstrap for OLS
+
 ``` r
 # set a 'global' seed in the Julia session
 library(wildboottestjlr)
@@ -227,6 +229,8 @@ Log.Lik.
 </tr>
 </tbody>
 </table>
+
+### The Wild Bootstrap for IV (WRE)
 
 If `boottest()` is applied based on an object of type `ivreg`, the WCE
 bootstrap [Davidson & MacKinnon
