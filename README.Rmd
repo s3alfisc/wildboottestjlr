@@ -29,8 +29,7 @@ knitr::opts_chunk$set(
 
 # wildboottestjlr
 
-`wildboottestjlr` ports the functionality of the [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package to R via the `JuliaConnectoR` package. 
-
+`wildboottestjlr` ports the functionality of the [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package to R via the [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR) package. 
 At the moment, it supports the following features of `WildBootTests.jl`:
 
 
@@ -44,7 +43,7 @@ At the moment, it supports the following features of `WildBootTests.jl`:
 
 The following model objects are currently supported: 
 
-+ OLS: `lm` (from stats), `fixest` (from fixest), `felm` from (felm)
++ OLS: `lm` (from stats), `fixest` (from fixest), `felm` from (lfe)
 + IV: `ivreg` (from ivreg). 
 
 In the future, IV methods for `fixest` and `lfe` will be added.
@@ -62,7 +61,7 @@ install_github("s3alfisc/wildboottestjlr")
 You can install Julia by following the steps described here: https://julialang.org/downloads/. `WildBootTests.jl` can be installed via 
 Julia's package management system. 
 
-To install R and Julia from within R, you can use functionality from `JuliaCall`:
+To install R and Julia from within R, you can use functionality from [JuliaCall](https://github.com/Non-Contradiction/JuliaCall):
 
 ```{r, eval = FALSE}
 library(JuliaCall)
@@ -71,17 +70,29 @@ wildboottestjlr::wildboottestjlr_setup(install_julia = TRUE,
 
 ```
 
+To allow R and Julia to communicate via `JuliaConnectoR`, you have to add your local Julia path to your .renviron file. You can do this from within R with the `usethis` package: 
+
+```{r, eval = FALSE}
+library(usethis)
+usethis::edit_r_environ()
+```
+
+This will open your .renviron file. Paste and save the path to your local Julia installation (e.g. for Julia 1.6.3) and you are good to go!
+
+```{r, eval = FALSE}
+JULIA_BINDIR=".../Julia-1.6.3/bin"
+```
+
 
 ## Example 
 
-`wildboottestjlr's` central function is `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the `fwildclusterboot` package.
+`wildboottestjlr's` central function is `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the [fwildclusterboot](https://github.com/s3alfisc/fwildclusterboot) package.
 
 ### The Wild Bootstrap for OLS
 
 ```{r, message = FALSE, warning = FALSE}
-# set a 'global' seed in the Julia session
 library(wildboottestjlr)
-
+# set a 'global' seed in the Julia session
 set_julia_seed(rng = 12313452435)
 
 data(voters)
@@ -126,5 +137,23 @@ boot_ivreg <- boottest(object = ivreg_fit, B = 999, param = "education", clustid
 summary(boot_ivreg)
 ```
 
+## Benchmarks
 
+After compilation (which takes around 60-80s), `wildboottestjlr` is orders of magnitude faster than `fwildclusterboot`, in particular when the number of clusters N_G and the number of bootstrap iterations B get large. 
+
+
+```{r, fig.width=10, fig.height=3, echo = FALSE, warning = FALSE, message = FALSE}
+library(ggplot2)
+df <- data.table::fread("C:/Users/alexa/Dropbox/R package development/wildboottestjlr/benchmarks_df")
+df$B <- factor(df$B, levels = c("10K", "100K"))
+df$N_G <- factor(df$N_G, levels = c("N_G = 20", "N_G = 50", "N_G = 100", "N_G = 500", "N_G = 1000"))
+
+ggplot(data = df, aes(x = B, y = time, color = type)) + 
+  facet_wrap(~N_G, nrow = 1) + 
+  geom_point() + 
+scale_y_continuous(trans='log10') + 
+  theme_bw()
+```
+
+The benchmarks plot the median value of 3 runs of a linear regression with N = 10.000 and k = 21.
 

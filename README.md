@@ -19,9 +19,10 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 `wildboottestjlr` ports the functionality of the
 [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package
-to R via the `JuliaConnectoR` package.
-
-At the moment, it supports the following features of `WildBootTests.jl`:
+to R via the
+[JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR)
+package. At the moment, it supports the following features of
+`WildBootTests.jl`:
 
 -   The wild bootstrap for OLS (Wu 1986).
 -   The Wild Restricted Efficient bootstrap (WRE) for IV/2SLS/LIML
@@ -35,7 +36,7 @@ At the moment, it supports the following features of `WildBootTests.jl`:
 
 The following model objects are currently supported:
 
--   OLS: `lm` (from stats), `fixest` (from fixest), `felm` from (felm)
+-   OLS: `lm` (from stats), `fixest` (from fixest), `felm` from (lfe)
 -   IV: `ivreg` (from ivreg).
 
 In the future, IV methods for `fixest` and `lfe` will be added.
@@ -54,7 +55,7 @@ You can install Julia by following the steps described here:
 via Julia’s package management system.
 
 To install R and Julia from within R, you can use functionality from
-`JuliaCall`:
+[JuliaCall](https://github.com/Non-Contradiction/JuliaCall):
 
 ``` r
 library(JuliaCall)
@@ -62,18 +63,34 @@ wildboottestjlr::wildboottestjlr_setup(install_julia = TRUE,
                                        install_wildboottests = TRUE)
 ```
 
+To allow R and Julia to communicate via `JuliaConnectoR`, you have to
+add your local Julia path to your .renviron file. You can do this from
+within R with the `usethis` package:
+
+``` r
+library(usethis)
+usethis::edit_r_environ()
+```
+
+This will open your .renviron file. Paste and save the path to your
+local Julia installation (e.g. for Julia 1.6.3) and you are good to go!
+
+``` r
+JULIA_BINDIR=".../Julia-1.6.3/bin"
+```
+
 ## Example
 
 `wildboottestjlr's` central function is `boottest()`. Beyond few minor
 differences, it largely mirrors the `boottest()` function from the
-`fwildclusterboot` package.
+[fwildclusterboot](https://github.com/s3alfisc/fwildclusterboot)
+package.
 
 ### The Wild Bootstrap for OLS
 
 ``` r
-# set a 'global' seed in the Julia session
 library(wildboottestjlr)
-
+# set a 'global' seed in the Julia session
 set_julia_seed(rng = 12313452435)
 #> <Julia object of type MersenneTwister>
 #> MersenneTwister(12313452435)
@@ -283,5 +300,17 @@ summary(boot_ivreg)
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.015    0.017      0.24
+#> 1 1*education = 0     0.09     2.201   0.022    0.015     0.241
 ```
+
+## Benchmarks
+
+After compilation (which takes around 60-80s), `wildboottestjlr` is
+orders of magnitude faster than `fwildclusterboot`, in particular when
+the number of clusters N\_G and the number of bootstrap iterations B get
+large.
+
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+
+The benchmarks plot the median value of 3 runs of a linear regression
+with N = 10.000 and k = 21.

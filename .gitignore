@@ -8,3 +8,5 @@
 .README.md
 .README.rmd
 .Rproj
+^README\.Rmd$
+^LICENSE\.md$
