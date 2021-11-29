@@ -1,22 +1,24 @@
-wildboottestjlr_setup <- function (install_jl_packages = FALSE, ...){
+wildboottestjlr_setup <- function (install_julia = TRUE, install_wildboottests = TRUE, julia_path){
 
   #' Connect R and Julia via JuliaConnectoR & installs Julia dependency packages (if required)
-  #' @param install_jl_packages Logical. If TRUE, all required Julia packages are installed
-  #' @param ... additional function arguments
+  #' @param install_julia Logical. True by default. Should Julia be installed?
+  #' @param install_wildboottests Logical. TRUE by default. Installs WildBootTests.jl
+  #' @param julia_path Character. Path to Julia installation - required if WildBootTests.jl needs to be installed.
+  #' @importFrom JuliaCall install_julia julia_install_package
   #' @export
 
-  if(install_jl_packages){
-    # does WildBootTests.jl needs to be installed?
-    JuliaCall::julia_install_package("https://github.com/droodman/WildBootTests.jl")
-    JuliaCall::julia_install_package_if_needed("StableRNGs")
+  if(install_julia){
+    JuliaCall::install_julia()
   }
 
-  # connect R to a Julia session
-  #julia <- JuliaCall::julia_setup(path_to_julia)
+  if(install_wildboottests){
+    message("Note that setting up Julia & installing WildBootTests.jl will take some time - approx. 1-2 minutes.")
+    JuliaCall::julia_setup(julia_path)
+    JuliaCall::julia_install_package("https://github.com/droodman/WildBootTests.jl")
+  }
 
-  # make libraraies available
-  JuliaConnectoR::juliaImport("WildBootTests")
-  #JuliaCall::julia_library("WildBootTests")
-  #JuliaCall::julia_library("StableRNGs")
+  message("Please restart your R sessions.")
+
+
 
 }

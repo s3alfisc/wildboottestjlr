@@ -136,7 +136,6 @@ stops the procedure after 10 iterations.
 
 \examples{
 library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 data(voters)
 lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
          data = voters)
@@ -164,7 +163,6 @@ boot4 <- boottest(lm_fit,
                   beta0 = 2)
 summary(boot1)
 plot(boot1)
-function to paste all 'enumerated type' julia arguments together
 }
 \references{
 Roodman et al., 2019, "Fast and wild: Bootstrap inference in

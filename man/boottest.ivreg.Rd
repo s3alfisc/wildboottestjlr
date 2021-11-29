@@ -125,5 +125,4 @@ MacKinnon, James G., and Matthew D. Webb. "The wild bootstrap for few (treated) 
 MacKinnon, James. "Wild cluster bootstrap confidence intervals." L'Actualite economique 91.1-2 (2015): 11-33.
 
 Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
-function to paste all 'enumerated type' julia arguments together
 }

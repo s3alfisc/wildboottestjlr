@@ -4,12 +4,18 @@
 \alias{wildboottestjlr_setup}
 \title{Connect R and Julia via JuliaConnectoR & installs Julia dependency packages (if required)}
 \usage{
-wildboottestjlr_setup(install_jl_packages = FALSE, ...)
+wildboottestjlr_setup(
+  install_julia = TRUE,
+  install_wildboottests = TRUE,
+  julia_path
+)
 }
 \arguments{
-\item{install_jl_packages}{Logical. If TRUE, all required Julia packages are installed}
+\item{install_julia}{Logical. True by default. Should Julia be installed?}
 
-\item{...}{additional function arguments}
+\item{install_wildboottests}{Logical. TRUE by default. Installs WildBootTests.jl}
+
+\item{julia_path}{Character. Path to Julia installation - required if WildBootTests.jl needs to be installed.}
 }
 \description{
 Connect R and Julia via JuliaConnectoR & installs Julia dependency packages (if required)

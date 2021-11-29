@@ -50,6 +50,7 @@
 #'
 #' @import JuliaConnectoR
 #' @importFrom dreamerr check_arg validate_dots
+#' @importFrom stats as.formula coef model.matrix model.response model.weights residuals rlnorm rnorm update
 #'
 #' @method boottest lm
 #'
@@ -99,7 +100,6 @@
 #' @references Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
 #' @examples
 #' library(wildboottestjlr)
-#' wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 #' data(voters)
 #' lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
 #'          data = voters)
@@ -273,7 +273,7 @@ boottest.lm <- function(object,
   resp <- as.numeric(preprocess$Y)
   predexog <- preprocess$X
   R <- matrix(preprocess$R, 1, length(preprocess$R))
-  r <-matrix(beta0, 1, 1)
+  r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
   # Order the columns of `clustid` this way:
@@ -313,59 +313,25 @@ boottest.lm <- function(object,
   JuliaConnectoR::juliaEval('using Random')
 
   WildBootTests <- JuliaConnectoR::juliaImport("WildBootTests")
+  rng_jl <- juliaEval(paste0("Random.MersenneTwister(", rng, ")"))
 
-  paste_enumerated_args <- function(type = "rademacher", ptype = "two-tailed", rng = NULL){
+  eval_list <- list(floattype,
+                    R,
+                    r,
+                    resp = resp,
+                    predexog = predexog,
+                    clustid = clustid,
+                    nbootclustvar = nbootclustvar,
+                    nerrclustvar = nerrclustvar,
+                    obswt = obswt,
+                    level = level,
+                    getCI = getCI,
+                    imposenull = imposenull,
+                    rtol = rtol,
+                    small = small,
+                    rng = rng_jl)
 
-    #' function to paste all 'enumerated type' julia arguments together
-
-    enumerated_type <-
-      switch(type,
-             rademacher = "WildBootTests.rademacher",
-             mammen = "WildBootTests.mammen",
-             norm = "WildBootTests.normal",
-             webb = "WildBootTests.webb",
-             enumerated_type
-      )
-
-    enumerated_ptype <-
-      switch(ptype,
-             "two-tailed" = "WildBootTests.symmetric",
-             "equal_tailed" = "WildBootTests.equaltail",
-             ">" = "WildBootTests.upper",
-             "<" = "WildBootTests.lower",
-             enumerated_ptype
-      )
-
-    if(is.null(rng)){
-      rng <- "Random.MersenneTwister()"
-    } else{
-      rng <- paste0("Random.MersenneTwister(", rng, ")")
-    }
-
-    paste0("auxwttype = ",enumerated_type,
-           ", ptype = ", enumerated_ptype,
-           ", rng = ", rng)
-
-  }
-
-  positional_args <- paste0(floattype,",","[", paste0(R, collapse = " "),"],", "[", r, "]")
-  named_args <- 'resp, predexog, clustid, obswt, level, getCI, imposenull, rtol, small'
-  enumerated_args <- paste_enumerated_args(type = "rademacher", ptype = "two-tailed", rng = 231235123)
-
-  juliaLet_char <- paste0('wildboottest(', positional_args,';', named_args ,',', enumerated_args, ")")
-
-  # run wildboottest()
-  wildboottest_res <- JuliaConnectoR::juliaLet(juliaLet_char,
-                               resp = resp,
-                               predexog = predexog,
-                               clustid = clustid,
-                               obswt = obswt,
-                               level = level,
-                               getCI = getCI,
-                               imposenull = imposenull,
-                               rtol = rtol,
-                               small = small
-                               )
+  wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
 
 

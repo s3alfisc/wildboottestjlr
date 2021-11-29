@@ -23,7 +23,7 @@
   na_omit = TRUE,
   floattype = "Float32",
   small_sample_adjustment = TRUE,
-  feidadj = TRUE,
+  fedfadj = TRUE,
   ...
 )
 }
@@ -91,7 +91,7 @@ when fitting the regression model).}
 
 \item{small_sample_adjustment}{Logical. True by default. Should small sample adjustments be applied?}
 
-\item{feidadj}{Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?}
+\item{fedfadj}{Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?}
 
 \item{...}{Further arguments passed to or from other methods.}
 }
@@ -149,7 +149,6 @@ stops the procedure after 10 iterations.
 
 if(requireNamespace("lfe")){
 library(wildboottestjlr)
-wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 library(lfe)
 data(voters)
 felm_fit <- felm(proposition_vote ~ treatment + ideology1 + log_income
@@ -186,7 +185,6 @@ boot5 <- boottest(felm_fit,
 summary(boot1)
 plot(boot1)
 }
-function to paste all 'enumerated type' julia arguments together
 }
 \references{
 Roodman et al., 2019, "Fast and wild: Bootstrap inference in

@@ -50,7 +50,7 @@
 #'        when fitting the regression model).
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
-#' @param feidadj Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?
+#' @param fedfadj Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @importFrom dreamerr check_arg validate_dots
@@ -105,7 +105,6 @@
 #'
 #' if(requireNamespace("lfe")){
 #' library(wildboottestjlr)
-#' wildboottestjlr_setup("C:/Users/alexa/AppData/Local/Programs/Julia-1.6.3/bin")
 #' library(lfe)
 #' data(voters)
 #' felm_fit <- felm(proposition_vote ~ treatment + ideology1 + log_income
@@ -163,7 +162,7 @@ boottest.felm <- function(object,
                           na_omit = TRUE,
                           floattype = "Float32",
                           small_sample_adjustment = TRUE,
-                          feidadj = TRUE,
+                          fedfadj = TRUE,
                           ...) {
 
   call <- match.call()
@@ -183,16 +182,16 @@ boottest.felm <- function(object,
   check_arg(tol, "numeric scalar")
   check_arg(floattype, "character scalar")
   check_arg(small_sample_adjustment, "scalar logical")
-  check_arg(feidadj, "scalar logical")
+  check_arg(fedfadj, "scalar logical")
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
     stop("floattype needs either to be 'Float32' or 'Float64'.")
   }
 
-  if(is.null(fe) && feidadj == TRUE){
-    feidadj <- FALSE
-    message("No fixed effect is specified in the model. Therefore, feidadj = TRUE does not make sense & we set feidadj = FALSE.")
+  if(is.null(fe) && fedfadj == TRUE){
+    fedfadj <- FALSE
+    message("No fixed effect is specified in the model. Therefore, fedfadj = TRUE does not make sense & we set fedfadj = FALSE.")
   }
 
   if(tol < 0){
@@ -308,7 +307,7 @@ boottest.felm <- function(object,
   resp <- as.numeric(preprocess$Y)
   predexog <- preprocess$X
   R <- matrix(preprocess$R, 1, length(preprocess$R))
-  r <-matrix(beta0, 1, 1)
+  r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
   # Order the columns of `clustid` this way:
@@ -337,7 +336,7 @@ boottest.felm <- function(object,
   clustid <- as.matrix(sapply(clustid_mat, as.integer))
 
   obswt <-  preprocess$weights
-  feid <- preprocess$fixed_effect
+  feid <- as.integer(preprocess$fixed_effect[,1])
   level <-  1 - sign_level
   getCI <- ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE)
   imposenull <- ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE)
@@ -348,63 +347,53 @@ boottest.felm <- function(object,
   JuliaConnectoR::juliaEval('using Random')
 
   WildBootTests <- JuliaConnectoR::juliaImport("WildBootTests")
+  rng <- juliaEval(paste0("Random.MersenneTwister(", rng, ")"))
 
-  paste_enumerated_args <- function(type = "rademacher", ptype = "two-tailed", rng = NULL){
+  auxwttype <-
+    switch(type,
+           rademacher = "rademacher",
+           mammen = "mammen",
+           norm = "normal",
+           webb = "webb",
+           enumerated_type
+    )
 
-    #' function to paste all 'enumerated type' julia arguments together
+  ptype <-
+    switch(p_val_type,
+           "two-tailed" = "WildBootTests.symmetric",
+           "equal_tailed" = "WildBootTests.equaltail",
+           ">" = "WildBootTests.upper",
+           "<" = "WildBootTests.lower",
+           enumerated_ptype
+    )
 
-    enumerated_type <-
-      switch(type,
-             rademacher = "WildBootTests.rademacher",
-             mammen = "WildBootTests.mammen",
-             norm = "WildBootTests.normal",
-             webb = "WildBootTests.webb",
-             enumerated_type
-      )
+  eval_list <- list(floattype,
+                    R,
+                    r,
+                    resp = resp,
+                    predexog = predexog,
+                    clustid = clustid,
+                    nbootclustvar = nbootclustvar,
+                    nerrclustvar = nerrclustvar,
+                    nbootclustvar = nbootclustvar,
+                    nerrclustvar = nerrclustvar,
+                    obswt = obswt,
+                    level = level,
+                    getCI = getCI,
+                    imposenull = imposenull,
+                    rtol = rtol,
+                    small = small,
+                    rng = rng,
+                    auxwttype = auxwttype,
+                    ptype = ptype
+  )
 
-    enumerated_ptype <-
-      switch(ptype,
-             "two-tailed" = "WildBootTests.symmetric",
-             "equal_tailed" = "WildBootTests.equaltail",
-             ">" = "WildBootTests.upper",
-             "<" = "WildBootTests.lower",
-             enumerated_ptype
-      )
-
-    if(is.null(rng)){
-      rng <- "Random.MersenneTwister()"
-    } else{
-      rng <- paste0("Random.MersenneTwister(", rng, ")")
-    }
-
-    paste0("auxwttype = ",enumerated_type,
-           ", ptype = ", enumerated_ptype,
-           ", rng = ", rng)
-
+  if(!is.null(feid)){
+    eval_list[["feid"]] <- feid
+    eval_list[["fedfadj"]] <- fedfadj
   }
 
-  positional_args <- paste0(floattype,",","[", paste0(R, collapse = " "),"],", "[", r, "]")
-  if(is.null(fe)){
-    named_args <- 'resp, predexog, clustid, obswt, level, getCI, imposenull, rtol, small'
-  } else {
-    named_args <- 'resp, predexog, clustid, obswt, level, getCI, imposenull, rtol, small, feid, fedfadj'
-  }
-  enumerated_args <- paste_enumerated_args(type = "rademacher", ptype = "two-tailed", rng = 231235123)
-
-  juliaLet_char <- paste0('wildboottest(', positional_args,';', named_args ,',', enumerated_args, ")")
-
-  # run wildboottest()
-  wildboottest_res <- JuliaConnectoR::juliaLet(juliaLet_char,
-                                               resp = resp,
-                                               predexog = predexog,
-                                               clustid = clustid,
-                                               obswt = obswt,
-                                               level = level,
-                                               getCI = getCI,
-                                               imposenull = imposenull,
-                                               rtol = rtol,
-                                               small = small)
-
+  wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
 
   # collect results:

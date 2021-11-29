@@ -31,17 +31,26 @@ knitr::opts_chunk$set(
 
 `wildboottestjlr` ports the functionality of the [WildBootTests.jl](https://github.com/droodman/WildBootTests.jl) package to R via the `JuliaConnectoR` package. 
 
-It currently supports wild bootstrap inference for OLS and IV models via 
+At the moment, it supports the following features of `WildBootTests.jl`:
 
-+ OLS: `lm`, `fixest`, `lfe`
-+ IV: `ivreg`. 
+
++ The wild bootstrap for OLS (Wu 1986).
++ The Wild Restricted Efficient bootstrap (WRE) for IV/2SLS/LIML (Davidson and MacKinnon 2010).
++ The subcluster bootstrap (MacKinnon and Webb 2018).
++ Confidence intervals formed by inverting the test and iteratively searching for bounds.
++ Multiway clustering.
++ Arbitrary and multiple linear hypotheses in the parameters.
++ One-way fixed effects.
+
+The following model objects are currently supported: 
+
++ OLS: `lm` (from stats), `fixest` (from fixest), `felm` from (felm)
++ IV: `ivreg` (from ivreg). 
 
 In the future, IV methods for `fixest` and `lfe` will be added.
 
 
 ## Installation / Getting Started
-
-You can install Julia by following the steps described here: https://julialang.org/downloads/. 
 
 `wildboottestjlr` can be installed by running
 
@@ -50,9 +59,22 @@ library(devtools)
 install_github("s3alfisc/wildboottestjlr")
 ```
 
+You can install Julia by following the steps described here: https://julialang.org/downloads/. `WildBootTests.jl` can be installed via 
+Julia's package management system. 
+
+To install R and Julia from within R, you can use functionality from `JuliaCall`:
+
+```{r, eval = FALSE}
+library(JuliaCall)
+wildboottestjlr::wildboottestjlr_setup(install_julia = TRUE, 
+                                       install_wildboottests = TRUE)
+
+```
+
+
 ## Example 
 
-`wildboottestjlr's` central function is called `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the `fwildclusterboot` package.
+`wildboottestjlr's` central function is `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the `fwildclusterboot` package.
 
 ### The Wild Bootstrap for OLS
 
@@ -88,7 +110,7 @@ msummary(list(boot_lm, boot_feols, boot_felm),
 
 ### The Wild Bootstrap for IV (WRE)
 
-If `boottest()` is applied based on an object of type `ivreg`, the WCE bootstrap [Davidson & MacKinnon (2010)](https://www.tandfonline.com/doi/abs/10.1198/jbes.2009.07221) is run. Due to a currently undiscovered bug, this is only working for one-instrument models, see the discussion in issue '#7 IV Implementation: Task List'. 
+If `boottest()` is applied based on an object of type `ivreg`, the WRE bootstrap [Davidson & MacKinnon (2010)](https://www.tandfonline.com/doi/abs/10.1198/jbes.2009.07221) is run. 
 
 ```{r, message = FALSE, warning = FALSE}
 library(ivreg)

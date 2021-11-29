@@ -236,9 +236,8 @@ boottest.ivreg <- function(object,
   predexog <- preprocess$X_exog
   predendog <- preprocess$X_endog
   inst <- preprocess$instruments
-
   R <- matrix(preprocess$R, 1, length(preprocess$R))
-  r <-matrix(beta0, 1, 1)
+  r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
   # Order the columns of `clustid` this way:
@@ -267,7 +266,7 @@ boottest.ivreg <- function(object,
   clustid <- as.matrix(sapply(clustid_mat, as.integer))
 
   obswt <-  preprocess$weights
-  feid <- preprocess$fixed_effect
+  feid <- as.integer(preprocess$fixed_effect[,1])
   level <-  1 - sign_level
   getCI <- ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE)
   imposenull <- ifelse(is.null(impose_null) || impose_null == TRUE, TRUE, FALSE)
@@ -278,62 +277,48 @@ boottest.ivreg <- function(object,
   JuliaConnectoR::juliaEval('using Random')
 
   WildBootTests <- JuliaConnectoR::juliaImport("WildBootTests")
+  rng <- juliaEval(paste0("Random.MersenneTwister(", rng, ")"))
 
-  paste_enumerated_args <- function(type = "rademacher", ptype = "two-tailed", rng = NULL){
+  auxwttype <-
+    switch(type,
+           rademacher = "rademacher",
+           mammen = "mammen",
+           norm = "normal",
+           webb = "webb",
+           enumerated_type
+    )
 
-    #' function to paste all 'enumerated type' julia arguments together
+  ptype <-
+    switch(p_val_type,
+           "two-tailed" = "WildBootTests.symmetric",
+           "equal_tailed" = "WildBootTests.equaltail",
+           ">" = "WildBootTests.upper",
+           "<" = "WildBootTests.lower",
+           enumerated_ptype
+    )
 
-    enumerated_type <-
-      switch(type,
-             rademacher = "WildBootTests.rademacher",
-             mammen = "WildBootTests.mammen",
-             norm = "WildBootTests.normal",
-             webb = "WildBootTests.webb",
-             enumerated_type
-      )
+  eval_list <- list(floattype,
+                    R,
+                    r,
+                    resp = resp,
+                    predexog = predexog,
+                    predendog = predendog,
+                    inst = inst,
+                    clustid = clustid,
+                    nbootclustvar = nbootclustvar,
+                    nerrclustvar = nerrclustvar,
+                    obswt = obswt,
+                    level = level,
+                    getCI = getCI,
+                    imposenull = imposenull,
+                    rtol = rtol,
+                    small = small,
+                    rng = rng,
+                    auxwttype = auxwttype,
+                    ptype = ptype
+  )
 
-    enumerated_ptype <-
-      switch(ptype,
-             "two-tailed" = "WildBootTests.symmetric",
-             "equal_tailed" = "WildBootTests.equaltail",
-             ">" = "WildBootTests.upper",
-             "<" = "WildBootTests.lower",
-             enumerated_ptype
-      )
-
-    if(is.null(rng)){
-      rng <- "Random.MersenneTwister()"
-    } else{
-      rng <- paste0("Random.MersenneTwister(", rng, ")")
-    }
-
-    paste0("auxwttype = ",enumerated_type,
-           ", ptype = ", enumerated_ptype,
-           ", rng = ", rng)
-
-  }
-
-  positional_args <- paste0(floattype,",","[", paste0(R, collapse = " "),"],", "[", r, "]")
-  named_args <- 'resp, predexog, predendog, inst, clustid, obswt, level, getCI, imposenull, rtol, small'
-  enumerated_args <- paste_enumerated_args(type = "rademacher", ptype = "two-tailed", rng = 231235123)
-
-  juliaLet_char <- paste0('wildboottest(', positional_args,';', named_args ,',', enumerated_args, ")")
-
-  # run wildboottest()
-  wildboottest_res <- JuliaConnectoR::juliaLet(juliaLet_char,
-                                               resp = resp,
-                                               predexog = predexog,
-                                               predendog = predendog,
-                                               inst = inst,
-                                               clustid = clustid,
-                                               obswt = obswt,
-                                               level = level,
-                                               getCI = getCI,
-                                               imposenull = imposenull,
-                                               rtol = rtol,
-                                               small = small)
-
-
+  wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
   # collect results:
   p_val <- WildBootTests$p(wildboottest_res)
