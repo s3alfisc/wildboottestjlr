@@ -46,6 +46,7 @@
 #'        when fitting the regression model).
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
+#' @param fweights Logical. FALSE by default, TRUE for frequency weights.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @import JuliaConnectoR
@@ -145,6 +146,7 @@ boottest.lm <- function(object,
                         na_omit = TRUE,
                         floattype = "Float32",
                         small_sample_adjustment = TRUE,
+                        fweights = FALSE,
                         ...) {
 
   call <- match.call()
@@ -162,6 +164,7 @@ boottest.lm <- function(object,
   check_arg(tol, "numeric scalar")
   check_arg(floattype, "character scalar")
   check_arg(small_sample_adjustment, "scalar logical")
+  check_arg(fweights, "scalar logical")
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -295,7 +298,7 @@ boottest.lm <- function(object,
   #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
 
   nbootclustvar <- length(bootcluster)
-  nerrclustvar <- length(clustid)
+  nerrclustvar <- length(sum(!(clustid %in% bootcluster)))
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
@@ -309,11 +312,29 @@ boottest.lm <- function(object,
   rtol <- tol
   small <- small_sample_adjustment
 
+  ptype <- switch(p_val_type,
+                  "two-tailed" = "symmetric",
+                  "equal-tailed" = "equaltail",
+                  "<" = "lower",
+                  ">" = "upper",
+                  ptype
+  )
+
+  auxwttype <- switch(type,
+                      "rademacher" = "rademacher",
+                      "mammen" = "mammen",
+                      "norm" = "norm",
+                      "webb" = "webb",
+                      auxwttype
+  )
+
   JuliaConnectoR::juliaEval('using WildBootTests')
   JuliaConnectoR::juliaEval('using Random')
 
   WildBootTests <- JuliaConnectoR::juliaImport("WildBootTests")
-  rng_jl <- juliaEval(paste0("Random.MersenneTwister(", rng, ")"))
+  #if(!is.null(rng)){
+    rng_jl <- juliaEval(paste0("Random.MersenneTwister(", rng, ")"))
+  #}
 
   eval_list <- list(floattype,
                     R,
@@ -329,7 +350,10 @@ boottest.lm <- function(object,
                     imposenull = imposenull,
                     rtol = rtol,
                     small = small,
-                    rng = rng_jl)
+                    rng = rng_jl,
+                    ptype = ptype,
+                    auxwttype = auxwttype,
+                    fweights = fweights)
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
