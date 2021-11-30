@@ -300,7 +300,7 @@ summary(boot_ivreg)
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.022    0.015     0.241
+#> 1 1*education = 0     0.09     2.201   0.017    0.018     0.267
 ```
 
 ## Benchmarks

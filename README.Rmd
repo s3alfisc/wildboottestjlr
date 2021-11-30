@@ -152,7 +152,9 @@ ggplot(data = df, aes(x = B, y = time, color = type)) +
   facet_wrap(~N_G, nrow = 1) + 
   geom_point() + 
 scale_y_continuous(trans='log10') + 
-  theme_bw()
+  theme_bw() + 
+  xlab("Bootstrap iterations") + 
+  ylab("time in seconds, log scale")
 ```
 
 The benchmarks plot the median value of 3 runs of a linear regression with N = 10.000 and k = 21.
