@@ -24,6 +24,7 @@
   floattype = "Float32",
   small_sample_adjustment = TRUE,
   fedfadj = TRUE,
+  fweights = FALSE,
   ...
 )
 }
@@ -92,6 +93,8 @@ when fitting the regression model).}
 \item{small_sample_adjustment}{Logical. True by default. Should small sample adjustments be applied?}
 
 \item{fedfadj}{Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?}
+
+\item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

@@ -22,6 +22,7 @@
   na_omit = TRUE,
   floattype = "Float32",
   small_sample_adjustment = TRUE,
+  fweights = FALSE,
   ...
 )
 }
@@ -84,6 +85,8 @@ when fitting the regression model).}
 \item{floattype}{Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?}
 
 \item{small_sample_adjustment}{Logical. True by default. Should small sample adjustments be applied?}
+
+\item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

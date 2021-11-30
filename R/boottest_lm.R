@@ -298,7 +298,7 @@ boottest.lm <- function(object,
   #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
 
   nbootclustvar <- length(bootcluster)
-  nerrclustvar <- length(sum(!(clustid %in% bootcluster)))
+  nerrclustvar <- length(clustid)
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
@@ -353,7 +353,8 @@ boottest.lm <- function(object,
                     rng = rng_jl,
                     ptype = ptype,
                     auxwttype = auxwttype,
-                    fweights = fweights)
+                    fweights = fweights,
+                    reps = reps)
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 

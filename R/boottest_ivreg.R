@@ -47,6 +47,7 @@
 #'        when fitting the regression model).
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
+#' @param fweights Logical. FALSE by default, TRUE for frequency weights.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @param ... Further arguments passed to or from other methods.
@@ -103,6 +104,7 @@ boottest.ivreg <- function(object,
                           na_omit = TRUE,
                           floattype = "Float32",
                           small_sample_adjustment = TRUE,
+                          fweights = FALSE,
                           ...){
 
   # check inputs
@@ -122,6 +124,7 @@ boottest.ivreg <- function(object,
   check_arg(tol, "scalar numeric")
   check_arg(floattype, "character scalar")
   check_arg(small_sample_adjustment, "scalar logical")
+  check_arg(fweights, "scalar logical")
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -279,23 +282,21 @@ boottest.ivreg <- function(object,
   WildBootTests <- JuliaConnectoR::juliaImport("WildBootTests")
   rng <- juliaEval(paste0("Random.MersenneTwister(", rng, ")"))
 
-  auxwttype <-
-    switch(type,
-           rademacher = "rademacher",
-           mammen = "mammen",
-           norm = "normal",
-           webb = "webb",
-           enumerated_type
-    )
+  ptype <- switch(p_val_type,
+                  "two-tailed" = "symmetric",
+                  "equal-tailed" = "equaltail",
+                  "<" = "lower",
+                  ">" = "upper",
+                  ptype
+  )
 
-  ptype <-
-    switch(p_val_type,
-           "two-tailed" = "WildBootTests.symmetric",
-           "equal_tailed" = "WildBootTests.equaltail",
-           ">" = "WildBootTests.upper",
-           "<" = "WildBootTests.lower",
-           enumerated_ptype
-    )
+  auxwttype <- switch(type,
+                      "rademacher" = "rademacher",
+                      "mammen" = "mammen",
+                      "norm" = "norm",
+                      "webb" = "webb",
+                      auxwttype
+  )
 
   eval_list <- list(floattype,
                     R,
@@ -315,7 +316,11 @@ boottest.ivreg <- function(object,
                     small = small,
                     rng = rng,
                     auxwttype = auxwttype,
-                    ptype = ptype
+                    ptype = ptype,
+                    reps = reps,
+                    fweights = fweights
+
+
   )
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
