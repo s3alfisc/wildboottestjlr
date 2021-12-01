@@ -313,6 +313,11 @@ boottest.felm <- function(object,
   r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
+  # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
+  # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables
+  nbootclustvar <- ifelse(bootcluster == "max", length(clustid), length(bootcluster))
+  nerrclustvar <- length(clustid)
+
   # Order the columns of `clustid` this way:
   # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
   # 2. Variables used to define both bootstrapping and error clusters.
@@ -329,10 +334,6 @@ boottest.felm <- function(object,
   c2 <- clustid[which(clustid %in% bootcluster)]
   c3 <- clustid[which(!(clustid %in% bootcluster))]
   all_c <- c(c1, c2, c3)
-  #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
-
-  nbootclustvar <- length(bootcluster)
-  nerrclustvar <- length(clustid)
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
@@ -403,6 +404,7 @@ boottest.felm <- function(object,
   p_val <- WildBootTests$p(wildboottest_res)
   conf_int <- WildBootTests$CI(wildboottest_res)
   t_stat <- WildBootTests$teststat(wildboottest_res)
+  t_boot <- WildBootTests$dist(wildboottest_res)
 
   res_final <- list(
     point_estimate = point_estimate,
@@ -411,7 +413,7 @@ boottest.felm <- function(object,
     # p_test_vals = res_p_val$p_grid_vals,
     # test_vals = res_p_val$grid_vals,
     t_stat = t_stat,
-    # t_boot = res$t_boot,
+    t_boot = t_boot,
     #regression = res$object,
     param = param,
     N = preprocess$N,

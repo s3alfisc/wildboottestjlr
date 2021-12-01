@@ -47,6 +47,7 @@
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
+#' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @import JuliaConnectoR
@@ -147,6 +148,7 @@ boottest.lm <- function(object,
                         floattype = "Float32",
                         small_sample_adjustment = TRUE,
                         fweights = FALSE,
+                        getauxweights = FALSE,
                         ...) {
 
   call <- match.call()
@@ -165,6 +167,8 @@ boottest.lm <- function(object,
   check_arg(floattype, "character scalar")
   check_arg(small_sample_adjustment, "scalar logical")
   check_arg(fweights, "scalar logical")
+  check_arg(getauxweights, "scalar logical")
+
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -279,6 +283,11 @@ boottest.lm <- function(object,
   r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
+  # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
+  # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables
+  nbootclustvar <- ifelse(bootcluster == "max", length(clustid), length(bootcluster))
+  nerrclustvar <- length(clustid)
+
   # Order the columns of `clustid` this way:
   # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
   # 2. Variables used to define both bootstrapping and error clusters.
@@ -291,20 +300,20 @@ boottest.lm <- function(object,
     bootcluster <- clustid[which.min(N_G)]
   }
 
+  # only bootstrapping cluster: in bootcluster and not in clustid
   c1 <- bootcluster[which(!(bootcluster %in% clustid))]
+  # both bootstrapping and error cluster: all variables in clustid that are also in bootcluster
   c2 <- clustid[which(clustid %in% bootcluster)]
-  c3 <- clustid[which(!(clustid %in% bootcluster))]
+  # only error cluster: variables in clustid not in c1, c2
+  c3 <- clustid[which(!(clustid %in% c(c1, c2)))]
   all_c <- c(c1, c2, c3)
   #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
-
-  nbootclustvar <- length(bootcluster)
-  nerrclustvar <- length(clustid)
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
   clustid <- as.matrix(sapply(clustid_mat, as.integer))
 
-  obswt <-  preprocess$weights
+  #obswt <-  preprocess$weights      # if no weights provided: vector of ones
   feid <- preprocess$fixed_effect
   level <-  1 - sign_level
   getCI <- ifelse(is.null(conf_int) || conf_int == TRUE, TRUE, FALSE)
@@ -344,7 +353,6 @@ boottest.lm <- function(object,
                     clustid = clustid,
                     nbootclustvar = nbootclustvar,
                     nerrclustvar = nerrclustvar,
-                    obswt = obswt,
                     level = level,
                     getCI = getCI,
                     imposenull = imposenull,
@@ -353,8 +361,14 @@ boottest.lm <- function(object,
                     rng = rng_jl,
                     ptype = ptype,
                     auxwttype = auxwttype,
-                    fweights = fweights,
-                    reps = reps)
+                    reps = reps,
+                    getauxweights = getauxweights
+                    )
+
+  if(mean(preprocess$weights == 1) == 1){
+    eval_list[["obswt"]] <- preprocess$weights
+    eval_list[["fweights"]] <- fweights
+  }
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
@@ -364,6 +378,9 @@ boottest.lm <- function(object,
   p_val <- WildBootTests$p(wildboottest_res)
   conf_int <- WildBootTests$CI(wildboottest_res)
   t_stat <- WildBootTests$teststat(wildboottest_res)
+  t_boot <- WildBootTests$dist(wildboottest_res)
+
+  getauxweights <- WildBootTests$auxweights(wildboottest_res)
 
   res_final <- list(
     point_estimate = point_estimate,
@@ -372,7 +389,7 @@ boottest.lm <- function(object,
     # p_test_vals = res_p_val$p_grid_vals,
     # test_vals = res_p_val$grid_vals,
     t_stat = t_stat,
-    # t_boot = res$t_boot,
+    t_boot = t_boot,
     #regression = res$object,
     param = param,
     N = preprocess$N,
