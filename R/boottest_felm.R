@@ -313,10 +313,6 @@ boottest.felm <- function(object,
   r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
-  # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
-  # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables
-  nbootclustvar <- ifelse(bootcluster == "max", length(clustid), length(bootcluster))
-  nerrclustvar <- length(clustid)
 
   # Order the columns of `clustid` this way:
   # 1. Variables only used to define bootstrapping clusters, as in the subcluster bootstrap.
@@ -325,19 +321,28 @@ boottest.felm <- function(object,
   # In the most common case, `clustid` is a single column of type 2.
 
   if(length(bootcluster == 1) && bootcluster == "max"){
-    bootcluster <- clustid[which.max(N_G)]
+    bootcluster_n <- clustid
   } else if(length(bootcluster == 1) && bootcluster == "min"){
-    bootcluster <- clustid[which.min(N_G)]
+    bootcluster_n <- names(preprocess$N_G[which.min(preprocess$N_G)])
   }
 
-  c1 <- bootcluster[which(!(bootcluster %in% clustid))]
-  c2 <- clustid[which(clustid %in% bootcluster)]
-  c3 <- clustid[which(!(clustid %in% bootcluster))]
+  # only bootstrapping cluster: in bootcluster and not in clustid
+  c1 <- bootcluster_df[which(!(bootcluster_n %in% clustid))]
+  # both bootstrapping and error cluster: all variables in clustid that are also in bootcluster
+  c2 <- clustid[which(clustid %in% bootcluster_n)]
+  # only error cluster: variables in clustid not in c1, c2
+  c3 <- clustid[which(!(clustid %in% c(c1, c2)))]
   all_c <- c(c1, c2, c3)
+  #all_c <- lapply(all_c , function(x) ifelse(length(x) == 0, NULL, x))
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
-  clustid <- as.matrix(sapply(clustid_mat, as.integer))
+  clustid_df <- as.matrix(sapply(clustid_mat, as.integer))
+
+  # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
+  # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables
+  nbootclustvar <- ifelse(bootcluster == "max", length(clustid), length(bootcluster))
+  nerrclustvar <- length(clustid)
 
   obswt <-  preprocess$weights
   feid <- as.integer(preprocess$fixed_effect[,1])
@@ -374,7 +379,7 @@ boottest.felm <- function(object,
                     r,
                     resp = resp,
                     predexog = predexog,
-                    clustid = clustid,
+                    clustid = clustid_df,
                     nbootclustvar = nbootclustvar,
                     nerrclustvar = nerrclustvar,
                     nbootclustvar = nbootclustvar,
