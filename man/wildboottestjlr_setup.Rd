@@ -5,13 +5,13 @@
 \title{Connect R and Julia via JuliaConnectoR & installs Julia dependency packages (if required)}
 \usage{
 wildboottestjlr_setup(
-  install_julia = TRUE,
+  install_julia = FALSE,
   install_wildboottests = TRUE,
   julia_path
 )
 }
 \arguments{
-\item{install_julia}{Logical. True by default. Should Julia be installed?}
+\item{install_julia}{Logical. True by FALSE Should Julia be installed?}
 
 \item{install_wildboottests}{Logical. TRUE by default. Installs WildBootTests.jl}
 
