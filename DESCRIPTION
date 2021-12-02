@@ -1,6 +1,6 @@
 Package: wildboottestjlr
 Title: Fast Wild Cluster Bootstrap Inference in R via WildBootTests.jl and JuliaConnectoR 
-Version: 0.0.0.9000
+Version: 0.1
 Authors@R: 
     c(
     person(given = "Fischer",
