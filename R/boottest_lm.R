@@ -294,6 +294,8 @@ boottest.lm <- function(object,
     bootcluster_n <- clustid
   } else if(length(bootcluster == 1) && bootcluster == "min"){
     bootcluster_n <- names(preprocess$N_G[which.min(preprocess$N_G)])
+  } else {
+    bootcluster_n <- bootcluster
   }
 
   # only bootstrapping cluster: in bootcluster and not in clustid
@@ -311,7 +313,7 @@ boottest.lm <- function(object,
 
   # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
   # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables
-  nbootclustvar <- ifelse(bootcluster == "max", length(clustid), length(bootcluster))
+  nbootclustvar <- ifelse(length(bootcluster) == 1 && bootcluster == "max", length(clustid), length(bootcluster))
   nerrclustvar <- length(clustid)
 
   #obswt <-  preprocess$weights      # if no weights provided: vector of ones
@@ -366,7 +368,7 @@ boottest.lm <- function(object,
                     getauxweights = getauxweights
                     )
 
-  if(mean(preprocess$weights == 1) == 1){
+  if(mean(preprocess$weights == 1) != 1){
     eval_list[["obswt"]] <- preprocess$weights
     eval_list[["fweights"]] <- fweights
   }
