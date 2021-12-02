@@ -66,6 +66,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
       formula_coef_fe <- update(formula_coef_fe, paste("~ . -", fe))
     }
 
+    if(!is.null(bootcluster) & !(bootcluster %in% c("max", "min"))){
+      formula_coef_fe <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
+    }
+
 
     # if there is at least one fixed effect, get rid of intercept
     # note: length(NULL) == 0
@@ -140,6 +144,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
       formula_coef_fe <- update(formula_coef_fe, paste("~ . -", fe))
     }
 
+    if(!is.null(bootcluster) & !(bootcluster %in% c("max", "min"))){
+      formula_coef_fe <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
+    }
+
     of$formula <- as.call(formula)
 
     o <- match(c("formula", "data", "weights"), names(of), 0L)
@@ -163,6 +171,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     N_model <- object$N
     model_param_names <- rownames(coef(object))
   } else if (class(object) == "lm") {
+
     of <- object$call
     o <- match(c("formula", "data", "weights"), names(of), 0L)
     # keep only required arguments
@@ -179,6 +188,11 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     if (!is.null(cluster)) {
       formula <- update(formula_coef_fe, paste("~ . +", paste(cluster, collapse = "+")))
       # formula <- update(formula, paste("~ . -",fe))
+    }
+
+    # add bootcluster variables if not in model
+    if(!(is.null(bootcluster) || bootcluster == "max" || bootcluster == "min")){
+      formula <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
     }
 
     of$formula <- as.call(formula)
@@ -217,6 +231,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     formula_coef_fe <- formula(Formula::as.Formula(fml_linear, fml_iv), collapse = TRUE, update = TRUE)
 
+    if(!is.null(bootcluster) & !(bootcluster %in% c("max", "min"))){
+      formula_coef_fe <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
+    }
+
     of$formula <- as.call(fml_iv_cluster)
     o <- match(c("formula", "data", "weights"), names(of), 0L)
     of <- of[c(1L, o)]
@@ -237,7 +255,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   N_diff <- abs(N - N_model)
 
   if(na_omit == FALSE && N_diff != 0){
-    stop("One or more cluster variables set in boottest() contain
+    stop("One or more cluster or bootcluster variables set in boottest() contain
          NA values. This is not allowed if na_omit == FALSE.
          Please either delete the missing values from your model prior
          to estimating the regression model and conducting inference with
