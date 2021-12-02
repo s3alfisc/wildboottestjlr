@@ -77,22 +77,6 @@
 #'
 #' @export
 #'
-#' @section Confidence Intervals:
-#' \code{boottest} computes confidence intervals by inverting p-values.
-#'       In practice, the following procedure is used:
-#' \itemize{
-#' \item Based on an initial guess for starting values, calculate p-values
-#'       for 26 equal spaced points between the starting values.
-#' \item Out of the 26 calculated p-values, find the two pairs of values x
-#'       for which the corresponding p-values px cross the significance level
-#'       sign_level.
-#' \item Feed the two pairs of x into an numerical root finding procedure and
-#'       solve for the root. boottest currently relies on
-#'       \code{stats::uniroot} and sets an absolute tolerance of 1e-06 and
-#'       stops the procedure after 10 iterations.
-#' }
-#' @section Standard Errors:
-#' \code{boottest} does not calculate standard errors.
 #' @references Roodman et al., 2019, "Fast and wild: Bootstrap inference in
 #'             STATA using boottest", The STATA Journal.
 #'             (\url{https://journals.sagepub.com/doi/full/10.1177/1536867X19830877})
@@ -101,34 +85,36 @@
 #' @references MacKinnon, James. "Wild cluster bootstrap confidence intervals." L'Actualite economique 91.1-2 (2015): 11-33.
 #' @references Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
 #' @examples
-#' library(wildboottestjlr)
-#' data(voters)
-#' lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
-#'          data = voters)
-#' boot1 <- boottest(lm_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                    clustid = "group_id1")
-#' boot2 <- boottest(lm_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                  clustid = c("group_id1", "group_id2"))
-#' boot3 <- boottest(lm_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                   clustid = c("group_id1", "group_id2"),
-#'                   sign_level = 0.2,
-#'                   rng = 8,
-#'                   beta0 = 2)
-#' # test treatment + ideology1 = 2
-#' boot4 <- boottest(lm_fit,
-#'                   B = 9999,
-#'                   clustid = c("group_id1", "group_id2"),
-#'                   param = c("treatment", "ideology1"),
-#'                   R = c(1, 1),
-#'                   beta0 = 2)
-#' summary(boot1)
-#' plot(boot1)
+#' \dontrun{
+#'  library(wildboottestjlr)
+#'  data(voters)
+#'  lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
+#'           data = voters)
+#'  boot1 <- boottest(lm_fit,
+#'                    B = 9999,
+#'                    param = "treatment",
+#'                     clustid = "group_id1")
+#'  boot2 <- boottest(lm_fit,
+#'                    B = 9999,
+#'                    param = "treatment",
+#'                   clustid = c("group_id1", "group_id2"))
+#'  boot3 <- boottest(lm_fit,
+#'                    B = 9999,
+#'                    param = "treatment",
+#'                    clustid = c("group_id1", "group_id2"),
+#'                    sign_level = 0.2,
+#'                    rng = 8,
+#'                    beta0 = 2)
+#'  # test treatment + ideology1 = 2
+#'  boot4 <- boottest(lm_fit,
+#'                    B = 9999,
+#'                    clustid = c("group_id1", "group_id2"),
+#'                    param = c("treatment", "ideology1"),
+#'                    R = c(1, 1),
+#'                    beta0 = 2)
+#'  summary(boot1)
+#'  #plot(boot1)
+#' }
 
 boottest.lm <- function(object,
                         clustid,
@@ -309,7 +295,7 @@ boottest.lm <- function(object,
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
-  clustid_df <- as.matrix(sapply(clustid_mat, as.integer))
+  clustid_df <- base::as.matrix(sapply(clustid_mat, as.integer))
 
   # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
   # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables

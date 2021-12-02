@@ -256,7 +256,7 @@ boottest.ivreg <- function(object,
   }
 
   # only bootstrapping cluster: in bootcluster and not in clustid
-  c1 <- bootcluster_df[which(!(bootcluster_n %in% clustid))]
+  c1 <- bootcluster_n[which(!(bootcluster_n %in% clustid))]
   # both bootstrapping and error cluster: all variables in clustid that are also in bootcluster
   c2 <- clustid[which(clustid %in% bootcluster_n)]
   # only error cluster: variables in clustid not in c1, c2
@@ -266,7 +266,7 @@ boottest.ivreg <- function(object,
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
-  clustid_df <- as.matrix(sapply(clustid_mat, as.integer))
+  clustid_df <- base::as.matrix(sapply(clustid_mat, as.integer))
 
   # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
   # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables

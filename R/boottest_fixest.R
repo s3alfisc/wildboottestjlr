@@ -77,22 +77,6 @@
 #' \item{call}{Function call of boottest.}
 #' @export
 #' @method boottest fixest
-#' @section Confidence Intervals:
-#' \code{boottest} computes confidence intervals by inverting p-values.
-#'       In practice, the following procedure is used:
-#' \itemize{
-#' \item Based on an initial guess for starting values, calculate p-values
-#'       for 26 equal spaced points between the starting values.
-#' \item Out of the 26 calculated p-values, find the two pairs of values x
-#'       for which the corresponding p-values px cross the significance
-#'       sign_level sign_level.
-#' \item Feed the two pairs of x into an numerical root finding procedure
-#'       and solve for the root. boottest currently relies on
-#'       \code{stats::uniroot} and sets an absolute tolerance of 1e-06 and
-#'       stops the procedure after 10 iterations.
-#' }
-#' @section Standard Errors:
-#' \code{boottest} does not calculate standard errors.
 #' @references Roodman et al., 2019, "Fast and wild: Bootstrap inference in
 #'             STATA using boottest", The STATA Journal.
 #'             (\url{https://journals.sagepub.com/doi/full/10.1177/1536867X19830877})
@@ -102,43 +86,43 @@
 #' @references Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
 
 #' @examples
-#' if(requireNamespace("fixest")){
-#' library(wildboottestjlr)
-#' library(fixest)
-#' data(voters)
-#' feols_fit <-feols(proposition_vote ~ treatment + ideology1 + log_income,
-#'            fixef =  "Q1_immigration",
-#'            data = voters)
-#' boot1 <- boottest(feols_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                   clustid = "group_id1")
-#' boot2 <- boottest(feols_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                   clustid = c("group_id1", "group_id2"))
-#' boot3 <- boottest(feols_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                   clustid = c("group_id1", "group_id2"),
-#'                   fe = "Q1_immigration")
-#' boot4 <- boottest(feols_fit,
-#'                   B = 9999,
-#'                   param = "treatment",
-#'                   clustid = c("group_id1", "group_id2"),
-#'                   fe = "Q1_immigration",
-#'                   sign_level = 0.2,
-#'                   rng = 8,
-#'                   beta0 = 2)
-#' # test treatment + ideology1 = 2
-#' boot5 <- boottest(feols_fit,
-#'                   B = 9999,
-#'                   clustid = c("group_id1", "group_id2"),
-#'                   param = c("treatment", "ideology1"),
-#'                   R = c(1, 1),
-#'                   beta0 = 2)
-#' summary(boot1)
-#' plot(boot1)
+#' \dontrun{
+#'    library(wildboottestjlr)
+#'   library(fixest)
+#'   data(voters)
+#'    feols_fit <-feols(proposition_vote ~ treatment + ideology1 + log_income,
+#'               fixef =  "Q1_immigration",
+#'               data = voters)
+#'    boot1 <- boottest(feols_fit,
+#'                      B = 9999,
+#'                      param = "treatment",
+#'                      clustid = "group_id1")
+#'    boot2 <- boottest(feols_fit,
+#'                      B = 9999,
+#'                      param = "treatment",
+#'                      clustid = c("group_id1", "group_id2"))
+#'    boot3 <- boottest(feols_fit,
+#'                      B = 9999,
+#'                      param = "treatment",
+#'                      clustid = c("group_id1", "group_id2"),
+#'                      fe = "Q1_immigration")
+#'    boot4 <- boottest(feols_fit,
+#'                      B = 9999,
+#'                      param = "treatment",
+#'                      clustid = c("group_id1", "group_id2"),
+#'                      fe = "Q1_immigration",
+#'                      sign_level = 0.2,
+#'                      rng = 8,
+#'                      beta0 = 2)
+#'    # test treatment + ideology1 = 2
+#'    boot5 <- boottest(feols_fit,
+#'                      B = 9999,
+#'                      clustid = c("group_id1", "group_id2"),
+#'                      param = c("treatment", "ideology1"),
+#'                      R = c(1, 1),
+#'                      beta0 = 2)
+#'    summary(boot1)
+#'    #plot(boot1)
 #' }
 
 boottest.fixest <- function(object,
@@ -187,11 +171,6 @@ boottest.fixest <- function(object,
 
   if(!(floattype %in% c("Float32", "Float64"))){
     stop("floattype needs either to be 'Float32' or 'Float64'.")
-  }
-
-  if(is.null(fe) && fedfadj == TRUE){
-    fedfadj <- FALSE
-    message("No fixed effect is specified in the model. Therefore, fedfadj = TRUE does not make sense & we set fedfadj = FALSE.")
   }
 
 
@@ -335,7 +314,7 @@ boottest.fixest <- function(object,
   }
 
   # only bootstrapping cluster: in bootcluster and not in clustid
-  c1 <- bootcluster_df[which(!(bootcluster_n %in% clustid))]
+  c1 <- bootcluster_n[which(!(bootcluster_n %in% clustid))]
   # both bootstrapping and error cluster: all variables in clustid that are also in bootcluster
   c2 <- clustid[which(clustid %in% bootcluster_n)]
   # only error cluster: variables in clustid not in c1, c2
@@ -345,7 +324,7 @@ boottest.fixest <- function(object,
 
   # note that c("group_id1", NULL) == "group_id1"
   clustid_mat <- (preprocess$model_frame[, all_c])
-  clustid_df <- as.matrix(sapply(clustid_mat, as.integer))
+  clustid_df <- base::as.matrix(sapply(clustid_mat, as.integer))
 
   # `nbootclustvar::Integer=1`: number of bootstrap-clustering variables
   # `nerrclustvar::Integer=nbootclustvar`: number of error-clustering variables

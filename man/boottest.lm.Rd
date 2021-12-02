@@ -23,6 +23,7 @@
   floattype = "Float32",
   small_sample_adjustment = TRUE,
   fweights = FALSE,
+  getauxweights = FALSE,
   ...
 )
 }
@@ -88,6 +89,8 @@ when fitting the regression model).}
 
 \item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
 
+\item{getauxweights}{Logical. FALSE by default. Whether to save auxilliary weight matrix (v)}
+
 \item{...}{Further arguments passed to or from other methods.}
 }
 \value{
@@ -115,57 +118,37 @@ confidence interval.}
 bootstrap inference for objects of class lm by  implementing
 the fast wild bootstrap algorithm developed in Roodman et al., 2019.
 }
-\section{Confidence Intervals}{
-
-\code{boottest} computes confidence intervals by inverting p-values.
-In practice, the following procedure is used:
-\itemize{
-\item Based on an initial guess for starting values, calculate p-values
-for 26 equal spaced points between the starting values.
-\item Out of the 26 calculated p-values, find the two pairs of values x
-for which the corresponding p-values px cross the significance level
-sign_level.
-\item Feed the two pairs of x into an numerical root finding procedure and
-solve for the root. boottest currently relies on
-\code{stats::uniroot} and sets an absolute tolerance of 1e-06 and
-stops the procedure after 10 iterations.
-}
-}
-
-\section{Standard Errors}{
-
-\code{boottest} does not calculate standard errors.
-}
-
 \examples{
-library(wildboottestjlr)
-data(voters)
-lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
-         data = voters)
-boot1 <- boottest(lm_fit,
-                  B = 9999,
-                  param = "treatment",
-                   clustid = "group_id1")
-boot2 <- boottest(lm_fit,
-                  B = 9999,
-                  param = "treatment",
-                 clustid = c("group_id1", "group_id2"))
-boot3 <- boottest(lm_fit,
-                  B = 9999,
-                  param = "treatment",
-                  clustid = c("group_id1", "group_id2"),
-                  sign_level = 0.2,
-                  rng = 8,
-                  beta0 = 2)
-# test treatment + ideology1 = 2
-boot4 <- boottest(lm_fit,
-                  B = 9999,
-                  clustid = c("group_id1", "group_id2"),
-                  param = c("treatment", "ideology1"),
-                  R = c(1, 1),
-                  beta0 = 2)
-summary(boot1)
-plot(boot1)
+\dontrun{
+ library(wildboottestjlr)
+ data(voters)
+ lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
+          data = voters)
+ boot1 <- boottest(lm_fit,
+                   B = 9999,
+                   param = "treatment",
+                    clustid = "group_id1")
+ boot2 <- boottest(lm_fit,
+                   B = 9999,
+                   param = "treatment",
+                  clustid = c("group_id1", "group_id2"))
+ boot3 <- boottest(lm_fit,
+                   B = 9999,
+                   param = "treatment",
+                   clustid = c("group_id1", "group_id2"),
+                   sign_level = 0.2,
+                   rng = 8,
+                   beta0 = 2)
+ # test treatment + ideology1 = 2
+ boot4 <- boottest(lm_fit,
+                   B = 9999,
+                   clustid = c("group_id1", "group_id2"),
+                   param = c("treatment", "ideology1"),
+                   R = c(1, 1),
+                   beta0 = 2)
+ summary(boot1)
+ #plot(boot1)
+}
 }
 \references{
 Roodman et al., 2019, "Fast and wild: Bootstrap inference in
