@@ -60,8 +60,10 @@ To install R and Julia from within R, you can use functionality from
 
 ``` r
 library(JuliaCall)
-wildboottestjlr::wildboottestjlr_setup(install_julia = TRUE, 
-                                       install_wildboottests = TRUE)
+JuliaCall::install_julia() # installs Julia
+path_to_julia <- ".../Julia-1.6.3/bin"
+JuliaCall::julia_setup(JULIA_HOME = path_to_julia)
+JuliaCall::julia_install_package("WildBootTests.jl")
 ```
 
 To allow R and Julia to communicate via `JuliaConnectoR`, you have to
@@ -301,7 +303,7 @@ summary(boot_ivreg)
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.014    0.017     0.348
+#> 1 1*education = 0     0.09     2.201   0.015    0.018     0.229
 ```
 
 ## Benchmarks

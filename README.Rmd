@@ -66,9 +66,10 @@ To install R and Julia from within R, you can use functionality from [JuliaCall]
 
 ```{r, eval = FALSE}
 library(JuliaCall)
-wildboottestjlr::wildboottestjlr_setup(install_julia = TRUE, 
-                                       install_wildboottests = TRUE)
-
+JuliaCall::install_julia() # installs Julia
+path_to_julia <- ".../Julia-1.6.3/bin"
+JuliaCall::julia_setup(JULIA_HOME = path_to_julia)
+JuliaCall::julia_install_package("WildBootTests.jl")
 ```
 
 To allow R and Julia to communicate via `JuliaConnectoR`, you have to add your local Julia path to your .renviron file. You can do this from within R with the `usethis` package: 
