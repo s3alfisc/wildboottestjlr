@@ -21,8 +21,7 @@ Imports:
     JuliaCall,
     Formula,
     dreamerr,
-    generics, 
-    collapse
+    generics
 Suggests: 
     fwildclusterboot,
     fixest,
@@ -31,9 +30,9 @@ Suggests:
     fabricatr,
     knitr,
     rmarkdown,
-    broom, 
-    modelsummary, 
-    RStata, 
+    broom,
+    modelsummary,
+    RStata,
     tinytest
 License: MIT + file LICENSE
 Encoding: UTF-8

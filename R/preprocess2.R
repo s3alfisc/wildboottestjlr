@@ -9,7 +9,6 @@
 #' @return List containing preprocessed data for boottest estimation
 #' @importFrom dreamerr check_arg
 #' @importFrom Formula as.Formula
-#' @importFrom collapse fwithin
 #' @noRd
 
 preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
@@ -333,9 +332,9 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     fixed_effect <- as.data.frame(model_frame[, fe])
     # set use.g.names to FALSE?
-    g <- collapse::GRP(fixed_effect, call = FALSE)
-    X <- collapse::fwithin(X, g)
-    Y <- collapse::fwithin(Y, g)
+    # g <- collapse::GRP(fixed_effect, call = FALSE)
+    # X <- collapse::fwithin(X, g)
+    # Y <- collapse::fwithin(Y, g)
 
     fixed_effect_W <- fixed_effect[, 1]
     if (is.null(weights)) {

@@ -13,6 +13,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- [![](http://cranlogs.r-pkg.org/badges/last-month/fwildclusterboot?color=green)](https://cran.r-project.org/package=fwildclusterboot) -->
 <!-- [![minimal R version](https://img.shields.io/badge/R%3E%3D-4.0.0-6666ff.svg)](https://cran.r-project.org/) -->
 
+[![R-CMD-check](https://github.com/s3alfisc/wildboottestjlr/workflows/R-CMD-check/badge.svg)](https://github.com/s3alfisc/wildboottestjlr/actions)
 <!-- badges: end -->
 
 # wildboottestjlr
@@ -295,12 +296,12 @@ summary(boot_ivreg)
 #>  Observations: 3010
 #>  Bootstr. Iter: 999
 #>  Bootstr. Type: webb
-#>  Clustering: 3010-way
+#>  Clustering: 1-way
 #>  Confidence Sets: 95%
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.017    0.018     0.267
+#> 1 1*education = 0     0.09     2.201   0.014    0.017     0.348
 ```
 
 ## Benchmarks
