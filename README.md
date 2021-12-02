@@ -52,10 +52,11 @@ install_github("s3alfisc/wildboottestjlr")
 ```
 
 You can install Julia by following the steps described here:
-<https://julialang.org/downloads/>. `WildBootTests.jl` can be installed
-via Julia’s package management system.
+<https://julialang.org/downloads/>. `WildBootTests.jl` can then be
+installed via Julia’s package management system.
 
-To install R and Julia from within R, you can use functionality from
+To install `WildBootTests.jl` and Julia from within R, you can use
+functionality from
 [JuliaCall](https://github.com/Non-Contradiction/JuliaCall):
 
 ``` r
@@ -303,7 +304,7 @@ summary(boot_ivreg)
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.015    0.018     0.229
+#> 1 1*education = 0     0.09     2.201    0.01    0.015     0.227
 ```
 
 ## Benchmarks

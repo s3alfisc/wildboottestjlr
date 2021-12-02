@@ -318,36 +318,14 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   if (!is.null(fe)) {
     # note: simply update(..., -1) does not work - intercept is dropped, but all levels of other fe are kept
     X <- X[, -which(colnames(X) == "(Intercept)")]
+    fixed_effect <- as.data.frame(model_frame[, fe])
+  } else {
+    fixed_effect <- NULL
   }
 
   k <- dim(X)[2]
+
   weights <- as.vector(model.weights(of))
-
-  # all null if fe = NULL
-  fixed_effect <- NULL
-  W <- NULL
-  n_fe <- NULL
-
-  if (!is.null(fe)) {
-
-    fixed_effect <- as.data.frame(model_frame[, fe])
-    # set use.g.names to FALSE?
-    # g <- collapse::GRP(fixed_effect, call = FALSE)
-    # X <- collapse::fwithin(X, g)
-    # Y <- collapse::fwithin(Y, g)
-
-    fixed_effect_W <- fixed_effect[, 1]
-    if (is.null(weights)) {
-      levels(fixed_effect_W) <- (1 / table(fixed_effect)) # because duplicate levels are forbidden
-    } else if (!is.null(weights)) {
-      stop("Currently, boottest() does not jointly support regression weights / WLS and fixed effects. If you want to use
-            boottest() for inference based on WLS, please set fe = NULL.")
-      # levels(fixed_effect_W) <- 1 / table(fixed_effect)
-    }
-
-    W <- Matrix::Diagonal(N, as.numeric(as.character(fixed_effect_W)))
-    n_fe <- length(unique(fixed_effect[, 1]))
-  }
 
   if (is.null(weights)) {
     weights <- rep(1, N)
@@ -446,8 +424,8 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     X = X,
     weights = weights,
     fixed_effect = fixed_effect,
-    W = W,
-    n_fe = n_fe,
+    # W = W,
+    # n_fe = n_fe,
     N = N,
     k = k,
     clustid = clustid,
