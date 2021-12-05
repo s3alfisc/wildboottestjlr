@@ -35,17 +35,31 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     # add potential other cluster variables from cluster argument
     formula <- eval(of$fml)
 
+    # formula manipulation
+    # Step 1: get formula without fixed effects and clusters
+    # Step 2: add fixed effects from fixest
+    # Step 3: add cluster variables from fixest
+    # Step 4: add additional cluster variables specified in boottest()
+    # Step 5: add additional bootcluster variables specified in boottest()
+
     # combine fixed effects in formula with main formula
     # note: you get a warning here if rhs = 2 is empty (no fixed effect specified via fml)
-    formula_coef_fe <- suppressWarnings(formula(Formula::as.Formula(formula), lhs = 1, rhs = c(1, 2), collapse = TRUE))
+    formula <- suppressWarnings(formula(Formula::as.Formula(formula), lhs = 1, rhs = c(1, 2), collapse = TRUE))
 
-    formula <- formula_coef_fe
-
+    # if there are fixed effects specified not via formula, but via fixef arg
     if (!is.null(eval(of$fixef))) {
       # add additional fixed effects specified in fixef argument of feols()
-      formula_coef_fe <- update(formula_coef_fe, paste("~ . +", paste(eval(of$fixef), collapse = " + ")))
-      formula <- formula_coef_fe
+      formula <- update(formula, paste("~ . +", paste(eval(of$fixef), collapse = " + ")))
     }
+
+    # formula with only depvar and covariates, needed to construct design matrix X
+    formula_X <- formula
+
+    # drop fe from formula if required
+    if(!is.null(fe)){
+      formula_X <- update(formula_X, paste("~ . -", paste(fe, collapse = "+")))
+    }
+
     # add cluster variables specified in feols-cluster and boottest-cluster arguments
     if (!is.null(eval(of$cluster))) {
       formula <- update(formula, paste("~ . +", paste(eval(of$cluster), collapse = "+")))
@@ -54,27 +68,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
       formula <- update(formula, paste("~ . +", paste(cluster, collapse = "+")))
     }
 
-    # add fixed effects to formula - needed for model.matrix
-    # note: contains cluster variable if cluster variable are also a covariate of fixed effects
-    # further: gets rid of fixed effect specified as fe
-
-    # if(!is.null(eval(of$fixef))){
-    #   formula_coef_fe <- update(formula_coef_fe, paste("~ . +",paste(eval(of$fixef), collapse = "+")))
-    # }
-    if (!is.null(fe)) {
-      formula_coef_fe <- update(formula_coef_fe, paste("~ . -", fe))
+    # add bootcluster variables
+    if(sum(bootcluster %in% c(NULL, "max", "min")) == 0){
+      formula <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
     }
-
-    if(!is.null(bootcluster) & !(bootcluster %in% c("max", "min"))){
-      formula_coef_fe <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
-    }
-
-
-    # if there is at least one fixed effect, get rid of intercept
-    # note: length(NULL) == 0
-    # if(length(object$fixef_vars) >= 1){
-    #   formula_coef_fe <- update(formula_coef_fe, "~. - 1")
-    # }
 
     of$formula <- as.call(formula)
 
@@ -88,11 +85,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     # check if one of the fixed effects or cluster variables is not of
     # type character or factor
-    #sapply(of, class)
-    fixedid <- object$fixef_vars
+
+    fixedid <- object$fixef_vars[which(object$fixef_vars!= fe)]
     # are fixed effects neither character nor factor?
     j <- which(!(sapply(data.frame(of[,c(fixedid)]), class) %in%  c("factor")))
-    # j <- (sapply(data.frame(of[,c(fixedid)]), class) %in%  c("character", "factor"))
 
     # if only one fixed effect & if it is not a factor, `of[,c(fixedid)]` is not a data.frame but a vector
     if(length(j) == 1){
@@ -100,16 +96,15 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     } else if(length(j) > 1) {
       of[, c(fixedid)][,j] <- lapply(j, function(x) factor(of[, c(fixedid)][,x]))
     }
-    #sapply(of, class)
 
     # are all integer/ numeric variables now characters?
-    j <- !(sapply(data.frame(of[,c(fixedid)]), class) %in%  c("factor"))
+    #j <- !(sapply(data.frame(of[,c(fixedid)]), class) %in%  c("factor"))
 
     # if at least one j evaluates to "TRUE"
     # not covered by test coverage - case should never occur
-    if(sum(j) > 0){
-      stop(paste("The fixed effects variable(s)", paste(fixedid[j], collapse = " & "), "is/are not factor variables. This should have been fixed internally but apparently wasn't. Please report the bug!"))
-    }
+    #if(sum(j) > 0){
+    #  stop(paste("The fixed effects variable(s)", paste(fixedid[j], collapse = " & "), "is/are not factor variables. This should have been fixed internally but apparently wasn't. Please report the bug!"))
+    #}
     N_model <- object$nobs
     model_param_names <- c(names(coef(object)), object$fixef)
   } else if (class(object) == "felm") {
@@ -129,22 +124,22 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     # formula: model formula plus additional additional cluster variables specified via boottest()
 
     formula <- suppressWarnings(formula(Formula::as.Formula(eval(of$formula)), lhs = 1, rhs = c(1, 2, 4), collapse = TRUE))
+
+    # formula with only depvar and covariates, needed to construct design matrix X
+    formula_X <- suppressWarnings(formula(Formula::as.Formula(eval(of$formula)), lhs = 1, rhs = c(1, 2), collapse = TRUE))
+
+    # drop fe from formula if required
+    if(!is.null(fe)){
+      formula_X <- update(formula_X, paste("~ . -", paste(fe, collapse = "+")))
+    }
+
     # add a cluster to formula to get full model.frame
     if (!is.null(cluster)) {
       formula <- update(formula, paste("~ . +", paste(cluster, collapse = "+")))
-      # formula <- update(formula, paste("~ . -",fe))
     }
 
-    # formula_coef_fe: model_formula specified in felm: depvar, covariates + fe
-    formula_coef_fe <- suppressWarnings(formula(Formula::as.Formula(eval(of$formula)), lhs = 1, rhs = c(1, 2), collapse = TRUE))
-
-    # of !is.null(fe), delte fe from formula_coef_fe
-    if (!is.null(fe)) {
-      formula_coef_fe <- update(formula_coef_fe, paste("~ . -", fe))
-    }
-
-    if(!is.null(bootcluster) & !(bootcluster %in% c("max", "min"))){
-      formula_coef_fe <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
+    if(sum(bootcluster %in% c(NULL, "max", "min")) == 0){
+      formula <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
     }
 
     of$formula <- as.call(formula)
@@ -158,7 +153,8 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     # check if one of the fixed effects or cluster variables is not of
     # type character or factor
-    fixedid <- names(object$fe)
+    fixedid <- names(object$fe)[which(names(object$fe)!= fe)]
+
     # are fixed effects neither character nor factor?
     j <- which(!(sapply(data.frame(of[,c(fixedid)]), class) %in%  c("character", "factor")))
     # if only one fixed effect & if it is not a factor, `of[,c(fixedid)]` is not a data.frame but a vector
@@ -181,11 +177,15 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     # create formula objects by adding fixed effects and clusters from call
     # add potential other cluster variables from cluster argument
-    formula_coef_fe <- eval(of$formula)
+    formula <- eval(of$formula)
+
+    # formula with only depvar and covariates, needed to construct design matrix X
+    formula_X <- formula
+
 
     # add cluster variables to formula
     if (!is.null(cluster)) {
-      formula <- update(formula_coef_fe, paste("~ . +", paste(cluster, collapse = "+")))
+      formula <- update(formula, paste("~ . +", paste(cluster, collapse = "+")))
       # formula <- update(formula, paste("~ . -",fe))
     }
 
@@ -218,9 +218,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     # create formula objects by adding fixed effects and clusters from call
     # add potential other cluster variables from cluster argument
-    formula_coef_fe <- eval(of$formula)
+    formula <- eval(of$formula)
+    # formula with only depvar and covariates, needed to construct design matrix X
+    formula_X <- formula
 
-    # add cluster variable to formula_coef_fe
     fml <- Formula::as.Formula(of$formula)
     fml_linear <- formula(fml, lhs = 1, rhs = 1)
     fml_iv <- formula(fml, lhs = 0, rhs = 2)
@@ -228,10 +229,10 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     fml_cluster <- Formula::as.Formula(fml_linear_cluster, fml_iv)
     fml_iv_cluster <- formula(fml_cluster, collapse = TRUE, update = TRUE)
 
-    formula_coef_fe <- formula(Formula::as.Formula(fml_linear, fml_iv), collapse = TRUE, update = TRUE)
+    formula <- formula(Formula::as.Formula(fml_linear, fml_iv), collapse = TRUE, update = TRUE)
 
-    if(!is.null(bootcluster) & !(bootcluster %in% c("max", "min"))){
-      formula_coef_fe <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
+    if(sum(bootcluster %in% c(NULL, "max", "min")) == 0){
+      formula <- update(formula, paste("~ . +", paste(bootcluster, collapse = "+")))
     }
 
     of$formula <- as.call(fml_iv_cluster)
@@ -303,7 +304,18 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
   Y <- model.response(model_frame)
   # X: need to delete clusters
-  X <- model.matrix(formula_coef_fe, model_frame)
+  X <- model.matrix(formula_X, model_frame)
+
+  if (!is.null(fe) || model_has_fe) {
+    # note: simply update(..., -1) does not work - intercept is dropped, but all levels of other fe are kept
+    X <- X[, -which(colnames(X) == "(Intercept)")]
+    fixed_effect <- as.data.frame(model_frame[, fe])
+  } else {
+    fixed_effect <- NULL
+  }
+
+  k <- dim(X)[2]
+
 
   if(class(object) == "ivreg"){
     X_exog <- X[, names(object$exogenous)]
@@ -314,16 +326,6 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     X_endog <- NULL
     instruments <- NULL
   }
-
-  if (!is.null(fe)) {
-    # note: simply update(..., -1) does not work - intercept is dropped, but all levels of other fe are kept
-    X <- X[, -which(colnames(X) == "(Intercept)")]
-    fixed_effect <- as.data.frame(model_frame[, fe])
-  } else {
-    fixed_effect <- NULL
-  }
-
-  k <- dim(X)[2]
 
   weights <- as.vector(model.weights(of))
 
