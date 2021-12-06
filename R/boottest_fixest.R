@@ -30,7 +30,7 @@
 #' @param beta0 A numeric. Shifts the null hypothesis
 #'        H0: param = beta0 vs H1: param != beta0
 #' @param type character or function. The character string specifies the type
-#'        of boostrap to use: One of "rademacher", "mammen", "norm"
+#'        of boostrap to use: One of "rademacher", "mammen", "norm", "gamma"
 #'        and "webb". Alternatively, type can be a function(n) for drawing
 #'        wild bootstrap factors. "rademacher" by default.
 #'        For the Rademacher and Mammen distribution, if the number of replications B exceeds
@@ -356,8 +356,9 @@ boottest.fixest <- function(object,
   auxwttype <- switch(type,
                       "rademacher" = "rademacher",
                       "mammen" = "mammen",
-                      "norm" = "norm",
+                      "norm" = "normal",
                       "webb" = "webb",
+                      "gamma" = "gamma",
                       auxwttype
   )
 
@@ -384,7 +385,7 @@ boottest.fixest <- function(object,
                     fweights = fweights
   )
 
-  if(!is.null(feid)){
+  if(!is.null(fe)){
     eval_list[["feid"]] <- feid
     eval_list[["fedfadj"]] <- fedfadj
   }
