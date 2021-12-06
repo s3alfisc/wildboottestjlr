@@ -3,7 +3,7 @@
 # 1) test boot_lm
 
 # don't run tests automatically, else devtools::check() will fail
-run <- TRUE
+run <- FALSE
 
 if(run){
   library(wildboottestjlr)
@@ -58,7 +58,9 @@ if(run){
   for(object in lm_fits){
 
     wildboottestjlr::set_julia_seed(12345)
-    fwildclusterboot:::set.fwildclusterboot.seed(12345)
+    #fwildclusterboot:::set.fwildclusterboot.seed(12345)
+    set.seed(12391786)
+    dqrng::dqset.seed(8723467)
 
     for(type in c("rademacher", "webb", "mammen", "norm")){
 
