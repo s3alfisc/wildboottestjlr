@@ -1,6 +1,6 @@
 # test that methods for lm(), feols() and fixest produces equivalent results
 
-run <- TRUE
+run <- FALSE
 
 if(run){
   library(wildboottestjlr)
@@ -49,6 +49,7 @@ if(run){
   felm_fit_c <- felm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration | 0 | 0 | group_id1,
                      data = wildboottestjlr:::create_data(N = 1000, N_G1 = 20, icc1 = 0.01, N_G2 = 10, icc2 = 0.01, numb_fe1 = 10, numb_fe2 = 10, seed = 1234))
 
+  # test with floattype64
   pracma::tic()
   boot_lm <-  suppressWarnings(boottest(object = lm_fit, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
   pracma::toc()
@@ -58,37 +59,13 @@ if(run){
   boot_fixest_c <- suppressWarnings(boottest(object = feols_fit_c, clustid = c("group_id1"), B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = TRUE, floattype = "Float64"))
   boot_felm_c <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = TRUE, floattype = "Float64"))
 
-  # point estimates
-  expect_equivalent(boot_lm$point_estimate, boot_fixest$point_estimate)
-  expect_equivalent(boot_fixest$point_estimate, boot_felm$point_estimate)
-  expect_equivalent(boot_felm$point_estimate, boot_fixest_c$point_estimate)
-  expect_equivalent(boot_fixest_c$point_estimate, boot_felm_c$point_estimate)
-  expect_equivalent(boot_felm_c$point_estimate, boot_lm$point_estimate)
-
-  # p-vals
-  expect_equivalent(boot_lm$p_val, boot_fixest$p_val)
-  expect_equivalent(boot_fixest$p_val, boot_felm$p_val)
-  expect_equivalent(boot_felm$p_val, boot_fixest_c$p_val)
-  expect_equivalent(boot_fixest_c$p_val, boot_felm_c$p_val)
-  expect_equivalent(boot_felm_c$p_val, boot_lm$p_val)
-
-  # t_stats
-  expect_equivalent(boot_lm$t_stat, boot_fixest$t_stat)
-  expect_equivalent(boot_fixest$t_stat, boot_felm$t_stat)
-  expect_equivalent(boot_felm$t_stat, boot_fixest_c$t_stat)
-  expect_equivalent(boot_fixest_c$t_stat, boot_felm_c$t_stat)
-  expect_equivalent(boot_felm_c$t_stat, boot_lm$t_stat)
-
-  # confidence intervals
-  expect_equivalent(boot_lm$conf_int, boot_fixest$conf_int)
-  expect_equivalent(boot_fixest$conf_int, boot_felm$conf_int)
-  expect_equivalent(boot_felm$conf_int, boot_fixest_c$conf_int)
-  expect_equivalent(boot_fixest_c$conf_int, boot_felm_c$conf_int)
-  expect_equivalent(boot_felm_c$conf_int, boot_lm$conf_int)
-
-
-
-
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]]))
+         }
+  )
 
   # ---------------------------------------------------------------------------------------------- #
   # Part B1: one fixed effect in model
@@ -105,6 +82,7 @@ if(run){
   felm_fit_c <- felm(proposition_vote ~ treatment + ideology1 + log_income | Q1_immigration  | 0 | group_id1,
                      data = wildboottestjlr:::create_data(N = 1000, N_G1 = 20, icc1 = 0.01, N_G2 = 10, icc2 = 0.01, numb_fe1 = 10, numb_fe2 = 10, seed = 1234))
 
+
   boot_lm <-  suppressWarnings(boottest(object = lm_fit, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
   boot_fixest <- suppressWarnings(boottest(object = feols_fit, clustid = c("group_id1"), B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
   boot_felm <- suppressWarnings(boottest(object = felm_fit, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
@@ -116,57 +94,33 @@ if(run){
   boot_fixest_c_fe <- suppressWarnings(boottest(object = feols_fit_c, clustid = c("group_id1"), fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = FALSE, floattype = "Float64"))
   boot_felm_c_fe <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = FALSE, floattype = "Float64"))
   boot_felm_c_fe1 <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = TRUE, floattype = "Float64"))
-  boot_felm_c_fe$t_stat
-  boot_felm_c_fe1$t_stat
 
-  # point estimates
-  expect_equivalent(boot_lm$point_estimate, boot_fixest$point_estimate)
-  expect_equivalent(boot_fixest$point_estimate, boot_felm$point_estimate)
-  expect_equivalent(boot_felm$point_estimate, boot_fixest_c$point_estimate)
-  expect_equivalent(boot_fixest_c$point_estimate, boot_felm_c$point_estimate)
-  expect_equivalent(boot_felm_c$point_estimate, boot_lm$point_estimate)
+  # no fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]]))
+         }
+  )
 
-  expect_equivalent(boot_lm$point_estimate, boot_fixest_fe$point_estimate)
-  expect_equivalent(boot_fixest_fe$point_estimate, boot_felm_fe$point_estimate)
-  expect_equivalent(boot_felm_fe$point_estimate, boot_fixest_c_fe$point_estimate)
-  expect_equivalent(boot_fixest_c_fe$point_estimate, boot_felm_c_fe$point_estimate)
+  # fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_fixest_fe[[stat]], x[[stat]]))
+         }
+  )
 
-  # p-vals
-  expect_equivalent(boot_lm$p_val, boot_fixest$p_val)
-  expect_equivalent(boot_fixest$p_val, boot_felm$p_val)
-  expect_equivalent(boot_felm$p_val, boot_fixest_c$p_val)
-  expect_equivalent(boot_fixest_c$p_val, boot_felm_c$p_val)
-  expect_equivalent(boot_felm_c$p_val, boot_lm$p_val)
-
-  expect_equivalent(boot_lm$p_val, boot_fixest_fe$p_val)
-  expect_equivalent(boot_fixest_fe$p_val, boot_felm_fe$p_val)
-  expect_equivalent(boot_felm_fe$p_val, boot_fixest_c_fe$p_val)
-  expect_equivalent(boot_fixest_c_fe$p_val, boot_felm_c_fe$p_val)
-
-  # t_stats
-  expect_equivalent(boot_lm$t_stat, boot_fixest$t_stat)
-  expect_equivalent(boot_fixest$t_stat, boot_felm$t_stat)
-  expect_equivalent(boot_felm$t_stat, boot_fixest_c$t_stat)
-  expect_equivalent(boot_fixest_c$t_stat, boot_felm_c$t_stat)
-  expect_equivalent(boot_felm_c$t_stat, boot_lm$t_stat)
-
-  expect_equivalent(boot_lm$t_stat, boot_fixest_fe$t_stat)
-  expect_equivalent(boot_fixest_fe$t_stat, boot_felm_fe$t_stat)
-  expect_equivalent(boot_felm_fe$t_stat, boot_fixest_c_fe$t_stat)
-  expect_equivalent(boot_fixest_c_fe$t_stat, boot_felm_c_fe$t_stat)
-
-  # confidence intervals
-  expect_equivalent(boot_lm$conf_int, boot_fixest$conf_int)
-  expect_equivalent(boot_fixest$conf_int, boot_felm$conf_int)
-  expect_equivalent(boot_felm$conf_int, boot_fixest_c$conf_int)
-  expect_equivalent(boot_fixest_c$conf_int, boot_felm_c$conf_int)
-  expect_equivalent(boot_felm_c$conf_int, boot_lm$conf_int)
-
-  expect_equivalent(boot_lm$conf_int, boot_fixest_fe$conf_int)
-  expect_equivalent(boot_fixest_fe$conf_int, boot_felm_fe$conf_int)
-  expect_equivalent(boot_felm_fe$conf_int, boot_fixest_c_fe$conf_int)
-  expect_equivalent(boot_fixest_c_fe$conf_int, boot_felm_c_fe$conf_int)
-
+  # fixed effects: almost equal to boot_lm
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest_fe, boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]], tol = 1e-02))
+         }
+  )
 
 
   # ---------------------------------------------------------------------------------------------- #
@@ -196,54 +150,39 @@ if(run){
   boot_fixest_c_fe <- suppressWarnings(boottest(object = feols_fit_c, clustid = c("group_id1"), fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = FALSE, floattype = "Float64"))
   boot_felm_c_fe <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, fedfadj = FALSE, floattype = "Float64"))
 
+  # for(stat in c("point_estimate", "p_val", "t_stat", "conf_int")){
+  #   for(x in list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c)){
+  #     expect_equivalent(boot_lm[[stat]], x[[stat]])
+  #   }
+  # }
 
-  # point estimates
-  expect_equivalent(boot_lm$point_estimate, boot_fixest$point_estimate)
-  expect_equivalent(boot_fixest$point_estimate, boot_felm$point_estimate)
-  expect_equivalent(boot_felm$point_estimate, boot_fixest_c$point_estimate)
-  expect_equivalent(boot_fixest_c$point_estimate, boot_felm_c$point_estimate)
-  expect_equivalent(boot_felm_c$point_estimate, boot_lm$point_estimate)
+  # no fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]]))
+         }
+  )
 
-  expect_equivalent(boot_lm$point_estimate, boot_fixest_fe$point_estimate)
-  expect_equivalent(boot_fixest_fe$point_estimate, boot_felm_fe$point_estimate)
-  expect_equivalent(boot_felm_fe$point_estimate, boot_fixest_c_fe$point_estimate)
-  expect_equivalent(boot_fixest_c_fe$point_estimate, boot_felm_c_fe$point_estimate)
+  # fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_fixest_fe[[stat]], x[[stat]]))
+         }
+  )
 
-  # p-vals
-  expect_equivalent(boot_lm$p_val, boot_fixest$p_val)
-  expect_equivalent(boot_fixest$p_val, boot_felm$p_val)
-  expect_equivalent(boot_felm$p_val, boot_fixest_c$p_val)
-  expect_equivalent(boot_fixest_c$p_val, boot_felm_c$p_val)
-  expect_equivalent(boot_felm_c$p_val, boot_lm$p_val)
+  # fixed effects: almost equal to boot_lm
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest_fe, boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]], tol = 1e-02))
+         }
+  )
 
-  expect_equivalent(boot_lm$p_val, boot_fixest_fe$p_val)
-  expect_equivalent(boot_fixest_fe$p_val, boot_felm_fe$p_val)
-  expect_equivalent(boot_felm_fe$p_val, boot_fixest_c_fe$p_val)
-  expect_equivalent(boot_fixest_c_fe$p_val, boot_felm_c_fe$p_val)
-
-  # t_stats
-  expect_equivalent(boot_lm$t_stat, boot_fixest$t_stat)
-  expect_equivalent(boot_fixest$t_stat, boot_felm$t_stat)
-  expect_equivalent(boot_felm$t_stat, boot_fixest_c$t_stat)
-  expect_equivalent(boot_fixest_c$t_stat, boot_felm_c$t_stat)
-  expect_equivalent(boot_felm_c$t_stat, boot_lm$t_stat)
-
-  expect_equivalent(boot_lm$t_stat, boot_fixest_fe$t_stat)
-  expect_equivalent(boot_fixest_fe$t_stat, boot_felm_fe$t_stat)
-  expect_equivalent(boot_felm_fe$t_stat, boot_fixest_c_fe$t_stat)
-  expect_equivalent(boot_fixest_c_fe$t_stat, boot_felm_c_fe$t_stat)
-
-  # confidence intervals
-  expect_equivalent(boot_lm$conf_int, boot_fixest$conf_int)
-  expect_equivalent(boot_fixest$conf_int, boot_felm$conf_int)
-  expect_equivalent(boot_felm$conf_int, boot_fixest_c$conf_int)
-  expect_equivalent(boot_fixest_c$conf_int, boot_felm_c$conf_int)
-  expect_equivalent(boot_felm_c$conf_int, boot_lm$conf_int)
-
-  expect_equivalent(boot_lm$conf_int, boot_fixest_fe$conf_int)
-  expect_equivalent(boot_fixest_fe$conf_int, boot_felm_fe$conf_int)
-  expect_equivalent(boot_felm_fe$conf_int, boot_fixest_c_fe$conf_int)
-  expect_equivalent(boot_fixest_c_fe$conf_int, boot_felm_c_fe$conf_int)
 
 
   # ---------------------------------------------------------------------------------------------- #
@@ -271,35 +210,13 @@ if(run){
   boot_fixest_c <- suppressWarnings(boottest(object = feols_fit_c, clustid = c("group_id1"), B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
   boot_felm_c <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
 
-  # point estimates
-  expect_equivalent(boot_lm$point_estimate, boot_fixest$point_estimate)
-  expect_equivalent(boot_fixest$point_estimate, boot_felm$point_estimate)
-  expect_equivalent(boot_felm$point_estimate, boot_fixest_c$point_estimate)
-  expect_equivalent(boot_fixest_c$point_estimate, boot_felm_c$point_estimate)
-  expect_equivalent(boot_felm_c$point_estimate, boot_lm$point_estimate)
-
-  # p-vals
-  expect_equivalent(boot_lm$p_val, boot_fixest$p_val)
-  expect_equivalent(boot_fixest$p_val, boot_felm$p_val)
-  expect_equivalent(boot_felm$p_val, boot_fixest_c$p_val)
-  expect_equivalent(boot_fixest_c$p_val, boot_felm_c$p_val)
-  expect_equivalent(boot_felm_c$p_val, boot_lm$p_val)
-
-  # t_stats
-  expect_equivalent(boot_lm$t_stat, boot_fixest$t_stat)
-  expect_equivalent(boot_fixest$t_stat, boot_felm$t_stat)
-  expect_equivalent(boot_felm$t_stat, boot_fixest_c$t_stat)
-  expect_equivalent(boot_fixest_c$t_stat, boot_felm_c$t_stat)
-  expect_equivalent(boot_felm_c$t_stat, boot_lm$t_stat)
-
-  # confidence intervals
-  expect_equivalent(boot_lm$conf_int, boot_fixest$conf_int)
-  expect_equivalent(boot_fixest$conf_int, boot_felm$conf_int)
-  expect_equivalent(boot_felm$conf_int, boot_fixest_c$conf_int)
-  expect_equivalent(boot_fixest_c$conf_int, boot_felm_c$conf_int)
-  expect_equivalent(boot_felm_c$conf_int, boot_lm$conf_int)
-
-
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]]))
+         }
+  )
 
 
   # ---------------------------------------------------------------------------------------------- #
@@ -329,53 +246,33 @@ if(run){
   boot_fixest_c_fe <- suppressWarnings(boottest(object = feols_fit_c, clustid = c("group_id1"), fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64", fedfadj = FALSE))
   boot_felm_c_fe <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64", fedfadj = FALSE))
 
-  # point estimates
-  expect_equivalent(boot_lm$point_estimate, boot_fixest$point_estimate)
-  expect_equivalent(boot_fixest$point_estimate, boot_felm$point_estimate)
-  expect_equivalent(boot_felm$point_estimate, boot_fixest_c$point_estimate)
-  expect_equivalent(boot_fixest_c$point_estimate, boot_felm_c$point_estimate)
-  expect_equivalent(boot_felm_c$point_estimate, boot_lm$point_estimate)
+  # no fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]]))
+         }
+  )
 
-  expect_equivalent(boot_lm$point_estimate, boot_fixest_fe$point_estimate)
-  expect_equivalent(boot_fixest_fe$point_estimate, boot_felm_fe$point_estimate)
-  expect_equivalent(boot_felm_fe$point_estimate, boot_fixest_c_fe$point_estimate)
-  expect_equivalent(boot_fixest_c_fe$point_estimate, boot_felm_c_fe$point_estimate)
+  # fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_fixest_fe[[stat]], x[[stat]]))
+         }
+  )
 
-  # p-vals
-  expect_equivalent(boot_lm$p_val, boot_fixest$p_val)
-  expect_equivalent(boot_fixest$p_val, boot_felm$p_val)
-  expect_equivalent(boot_felm$p_val, boot_fixest_c$p_val)
-  expect_equivalent(boot_fixest_c$p_val, boot_felm_c$p_val)
-  expect_equivalent(boot_felm_c$p_val, boot_lm$p_val)
+  # fixed effects: almost equal to boot_lm
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest_fe, boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]], tol = 1e-02))
+         }
+  )
 
-  expect_equivalent(boot_lm$p_val, boot_fixest_fe$p_val)
-  expect_equivalent(boot_fixest_fe$p_val, boot_felm_fe$p_val)
-  expect_equivalent(boot_felm_fe$p_val, boot_fixest_c_fe$p_val)
-  expect_equivalent(boot_fixest_c_fe$p_val, boot_felm_c_fe$p_val)
-
-  # t_stats
-  expect_equivalent(boot_lm$t_stat, boot_fixest$t_stat)
-  expect_equivalent(boot_fixest$t_stat, boot_felm$t_stat)
-  expect_equivalent(boot_felm$t_stat, boot_fixest_c$t_stat)
-  expect_equivalent(boot_fixest_c$t_stat, boot_felm_c$t_stat)
-  expect_equivalent(boot_felm_c$t_stat, boot_lm$t_stat)
-
-  expect_equivalent(boot_lm$t_stat, boot_fixest_fe$t_stat)
-  expect_equivalent(boot_fixest_fe$t_stat, boot_felm_fe$t_stat)
-  expect_equivalent(boot_felm_fe$t_stat, boot_fixest_c_fe$t_stat)
-  expect_equivalent(boot_fixest_c_fe$t_stat, boot_felm_c_fe$t_stat)
-
-  # confidence intervals
-  expect_equivalent(boot_lm$conf_int, boot_fixest$conf_int)
-  expect_equivalent(boot_fixest$conf_int, boot_felm$conf_int)
-  expect_equivalent(boot_felm$conf_int, boot_fixest_c$conf_int)
-  expect_equivalent(boot_fixest_c$conf_int, boot_felm_c$conf_int)
-  expect_equivalent(boot_felm_c$conf_int, boot_lm$conf_int)
-
-  expect_equivalent(boot_lm$conf_int, boot_fixest_fe$conf_int)
-  expect_equivalent(boot_fixest_fe$conf_int, boot_felm_fe$conf_int)
-  expect_equivalent(boot_felm_fe$conf_int, boot_fixest_c_fe$conf_int)
-  expect_equivalent(boot_fixest_c_fe$conf_int, boot_felm_c_fe$conf_int)
 
 
 
@@ -407,55 +304,32 @@ if(run){
   boot_felm_c_fe <- suppressWarnings(boottest(object = felm_fit_c, clustid =  "group_id1", fe = "Q1_immigration", B = 999, rng = 911, param = "treatment", conf_int = TRUE))
 
 
-  # point estimates
-  expect_equivalent(boot_lm$point_estimate, boot_fixest$point_estimate)
-  expect_equivalent(boot_fixest$point_estimate, boot_felm$point_estimate)
-  expect_equivalent(boot_felm$point_estimate, boot_fixest_c$point_estimate)
-  expect_equivalent(boot_fixest_c$point_estimate, boot_felm_c$point_estimate)
-  expect_equivalent(boot_felm_c$point_estimate, boot_lm$point_estimate)
+  # no fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest, boot_felm, boot_fixest_c, boot_felm_c),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]], tol = 1e-02))
+         }
+  )
 
-  expect_equivalent(boot_lm$point_estimate, boot_fixest_fe$point_estimate)
-  expect_equivalent(boot_fixest_fe$point_estimate, boot_felm_fe$point_estimate)
-  expect_equivalent(boot_felm_fe$point_estimate, boot_fixest_c_fe$point_estimate)
-  expect_equivalent(boot_fixest_c_fe$point_estimate, boot_felm_c_fe$point_estimate)
+  # fixed effects: exactly equal
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_fixest_fe[[stat]], x[[stat]]))
+         }
+  )
 
-  # p-vals
-  expect_equivalent(boot_lm$p_val, boot_fixest$p_val)
-  expect_equivalent(boot_fixest$p_val, boot_felm$p_val)
-  expect_equivalent(boot_felm$p_val, boot_fixest_c$p_val)
-  expect_equivalent(boot_fixest_c$p_val, boot_felm_c$p_val)
-  expect_equivalent(boot_felm_c$p_val, boot_lm$p_val)
-
-  expect_equivalent(boot_lm$p_val, boot_fixest_fe$p_val)
-  expect_equivalent(boot_fixest_fe$p_val, boot_felm_fe$p_val)
-  expect_equivalent(boot_felm_fe$p_val, boot_fixest_c_fe$p_val)
-  expect_equivalent(boot_fixest_c_fe$p_val, boot_felm_c_fe$p_val)
-
-  # t_stats
-  expect_equivalent(boot_lm$t_stat, boot_fixest$t_stat)
-  expect_equivalent(boot_fixest$t_stat, boot_felm$t_stat)
-  expect_equivalent(boot_felm$t_stat, boot_fixest_c$t_stat)
-  expect_equivalent(boot_fixest_c$t_stat, boot_felm_c$t_stat)
-  expect_equivalent(boot_felm_c$t_stat, boot_lm$t_stat)
-
-  expect_equivalent(boot_lm$t_stat, boot_fixest_fe$t_stat)
-  expect_equivalent(boot_fixest_fe$t_stat, boot_felm_fe$t_stat)
-  expect_equivalent(boot_felm_fe$t_stat, boot_fixest_c_fe$t_stat)
-  expect_equivalent(boot_fixest_c_fe$t_stat, boot_felm_c_fe$t_stat)
-
-  # confidence intervals
-  expect_equivalent(boot_lm$conf_int, boot_fixest$conf_int)
-  expect_equivalent(boot_fixest$conf_int, boot_felm$conf_int)
-  expect_equivalent(boot_felm$conf_int, boot_fixest_c$conf_int)
-  expect_equivalent(boot_fixest_c$conf_int, boot_felm_c$conf_int)
-  expect_equivalent(boot_felm_c$conf_int, boot_lm$conf_int)
-
-  expect_equivalent(boot_lm$conf_int, boot_fixest_fe$conf_int)
-  expect_equivalent(boot_fixest_fe$conf_int, boot_felm_fe$conf_int)
-  expect_equivalent(boot_felm_fe$conf_int, boot_fixest_c_fe$conf_int)
-  expect_equivalent(boot_fixest_c_fe$conf_int, boot_felm_c_fe$conf_int)
-
-
+  # fixed effects: almost equal to boot_lm
+  lapply(list("point_estimate", "p_val", "t_stat", "conf_int"),
+         function(stat){
+           lapply(list(boot_fixest_fe, boot_felm_fe, boot_fixest_c_fe, boot_felm_c_fe),
+                  function(x)
+                    expect_equivalent(boot_lm[[stat]], x[[stat]], tol = 1e-02))
+         }
+  )
 
 
 }

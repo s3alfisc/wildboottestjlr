@@ -306,7 +306,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   # X: need to delete clusters
   X <- model.matrix(formula_X, model_frame)
 
-  if (!is.null(fe) || model_has_fe) {
+  if (!is.null(fe) ) {
     # note: simply update(..., -1) does not work - intercept is dropped, but all levels of other fe are kept
     X <- X[, -which(colnames(X) == "(Intercept)")]
     fixed_effect <- as.data.frame(model_frame[, fe])
