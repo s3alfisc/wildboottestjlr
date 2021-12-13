@@ -1,8 +1,6 @@
 wildboottestjlr_setup <- function(){
 
   #' install Julia, connect R and Julia, install and pre-compile WildBootTests.jl
-  #' @importFrom usethis edit_r_environ
-  #' @importFrom JuliaCall install_julia
   #' @importFrom JuliaConnectoR juliaEval
   #' @importFrom utils install.packages installed.packages
 
