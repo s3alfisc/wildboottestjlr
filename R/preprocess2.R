@@ -220,7 +220,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     # add potential other cluster variables from cluster argument
     formula <- eval(of$formula)
     # formula with only depvar and covariates, needed to construct design matrix X
-    formula_X <- formula
+    formula_X <- formula(Formula::Formula(formula), collapse = TRUE)
 
     fml <- Formula::as.Formula(of$formula)
     fml_linear <- formula(fml, lhs = 1, rhs = 1)
@@ -299,6 +299,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
   # ---------------------------------------------------------------------------- #
   # Step 3: assign Y, X, weights, fixed_effects, W etc.
+
 
   model_frame <- of
 
