@@ -56,31 +56,14 @@ You can install Julia by following the steps described here:
 installed via Julia’s package management system.
 
 To install `WildBootTests.jl` and Julia from within R, you can use
-functionality from
-[JuliaCall](https://github.com/Non-Contradiction/JuliaCall):
+`wildboottestjlr::wildboottestjlr_setup()`. Via
+`wildboottestjlr_setup()`, you can install Julia and `WildBootTests.jl`
+and connect R and Julia. You simply have to follow the instructions
+printed in the console!
 
 ``` r
-library(JuliaCall)
-JuliaCall::install_julia() # installs Julia
-path_to_julia <- ".../Julia-1.6.3/bin"
-JuliaCall::julia_setup(JULIA_HOME = path_to_julia)
-JuliaCall::julia_install_package("WildBootTests.jl")
-```
-
-To allow R and Julia to communicate via `JuliaConnectoR`, you have to
-add your local Julia path to your .renviron file. You can do this from
-within R with the `usethis` package:
-
-``` r
-library(usethis)
-usethis::edit_r_environ()
-```
-
-This will open your .renviron file. Paste and save the path to your
-local Julia installation (e.g. for Julia 1.6.3) and you are good to go!
-
-``` r
-JULIA_BINDIR=".../Julia-1.6.3/bin"
+library(wildboottestjlr)
+wildboottestr_setup()
 ```
 
 ## Example
@@ -304,17 +287,16 @@ summary(boot_ivreg)
 #>  Number of Clusters: 9
 #> 
 #>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201    0.01    0.015     0.227
+#> 1 1*education = 0     0.09     2.201   0.014    0.015     0.214
 ```
 
 ## Benchmarks
 
-After compilation (which takes around 60-80s), `wildboottestjlr` is
-orders of magnitude faster than `fwildclusterboot`, in particular when
-the number of clusters N\_G and the number of bootstrap iterations B get
-large.
+After compilation, `wildboottestjlr` is orders of magnitude faster than
+`fwildclusterboot`, in particular when the number of clusters N\_G and
+the number of bootstrap iterations B get large.
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
 
 The benchmarks plot the median value of 3 runs of a linear regression
 with N = 10.000 and k = 21.

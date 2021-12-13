@@ -18,7 +18,6 @@ Description: This package is an R port to WildBootTests.jl, which performs wild 
              ivreg package).
 Imports: 
     JuliaConnectoR,
-    JuliaCall,
     Formula,
     dreamerr,
     generics
@@ -34,7 +33,9 @@ Suggests:
     modelsummary,
     RStata,
     tinytest, 
-    clubSandwich
+    clubSandwich, 
+    JuliaCall, 
+    usethis
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

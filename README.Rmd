@@ -60,32 +60,14 @@ install_github("s3alfisc/wildboottestjlr")
 ```
 
 You can install Julia by following the steps described here: https://julialang.org/downloads/. 
-`WildBootTests.jl` can then be installed via 
-Julia's package management system. 
+`WildBootTests.jl` can then be installed via Julia's package management system. 
 
-To install `WildBootTests.jl` and Julia from within R, you can use functionality from [JuliaCall](https://github.com/Non-Contradiction/JuliaCall):
-
-```{r, eval = FALSE}
-library(JuliaCall)
-JuliaCall::install_julia() # installs Julia
-path_to_julia <- ".../Julia-1.6.3/bin"
-JuliaCall::julia_setup(JULIA_HOME = path_to_julia)
-JuliaCall::julia_install_package("WildBootTests.jl")
-```
-
-To allow R and Julia to communicate via `JuliaConnectoR`, you have to add your local Julia path to your .renviron file. You can do this from within R with the `usethis` package: 
+To install `WildBootTests.jl` and Julia from within R, you can use `wildboottestjlr::wildboottestjlr_setup()`. Via `wildboottestjlr_setup()`, you can install Julia and `WildBootTests.jl` and connect R and Julia. You simply have to follow the instructions printed in the console! 
 
 ```{r, eval = FALSE}
-library(usethis)
-usethis::edit_r_environ()
+library(wildboottestjlr)
+wildboottestr_setup()
 ```
-
-This will open your .renviron file. Paste and save the path to your local Julia installation (e.g. for Julia 1.6.3) and you are good to go!
-
-```{r, eval = FALSE}
-JULIA_BINDIR=".../Julia-1.6.3/bin"
-```
-
 
 ## Example 
 
@@ -142,7 +124,7 @@ summary(boot_ivreg)
 
 ## Benchmarks
 
-After compilation (which takes around 60-80s), `wildboottestjlr` is orders of magnitude faster than `fwildclusterboot`, in particular when the number of clusters N_G and the number of bootstrap iterations B get large. 
+After compilation, `wildboottestjlr` is orders of magnitude faster than `fwildclusterboot`, in particular when the number of clusters N_G and the number of bootstrap iterations B get large. 
 
 
 ```{r, fig.width=10, fig.height=3, echo = FALSE, warning = FALSE, message = FALSE}
