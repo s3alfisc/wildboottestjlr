@@ -3,7 +3,7 @@
 # 1) test boot_lm
 
 # don't run tests automatically, else devtools::check() will fail
-run <- FALSE
+run <- TRUE
 
 if(run){
   library(wildboottestjlr)
@@ -30,7 +30,7 @@ if(run){
   # voters$dummy <- sample(c(0,1), nrow(voters), TRUE)
 
   lm_fit <- lm(proposition_vote ~ treatment  + log_income  ,
-               data = wildboottestjlr:::create_data(N = 1000,
+               data = wildboottestjlr:::create_data(N = 100000,
                                                     N_G1 = 40,
                                                     icc1 = 0.5,
                                                     N_G2 = 20,
