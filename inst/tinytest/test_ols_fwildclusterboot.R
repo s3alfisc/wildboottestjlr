@@ -54,9 +54,9 @@ if(run){
                         ))
   lm_fits <- list(lm_fit, lm_fit_weights)
 
-  object = lm_fit
-  impose_null = TRUE
-  type = "rademacher"
+  # object = lm_fit
+  # impose_null = TRUE
+  # type = "rademacher"
 
   for(object in lm_fits){
 
@@ -69,13 +69,13 @@ if(run){
 
       for(impose_null in c(TRUE, FALSE)){
 
-        pracma::tic()
+        # pracma::tic()
         boot_r <- fwildclusterboot::boottest(object, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
-        pracma::toc()
+        # pracma::toc()
 
-        pracma::tic()
+        # pracma::tic()
         boot_jl1 <- wildboottestjlr::boottest(object, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
-        pracma::toc()
+        # pracma::toc()
 
         expect_equal(boot_r$p_val, boot_jl1$p_val[1], tolerance = reltol)
         expect_equal(boot_r$conf_int, c(boot_jl1$conf_int), tolerance = reltol)
