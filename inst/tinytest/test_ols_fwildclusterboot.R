@@ -15,20 +15,9 @@ if(run){
 
   N <- 1000
   seed <- 879345
-  voters <- wildboottestjlr:::create_data(N = N,
-                                           N_G1 = 40,
-                                           icc1 = 0.5,
-                                           N_G2 = 20,
-                                           icc2 = 0.2,
-                                           numb_fe1 = 10,
-                                           numb_fe2 = 10,
-                                           seed = seed,
-                                           weights = 1:N / N
-  )
 
-  voters$dummy <- sample(c(0,1), nrow(voters), TRUE)
 
-  lm_fit <<- lm(proposition_vote ~ treatment  + log_income  ,
+  lm_fit <- lm(proposition_vote ~ treatment  + log_income  ,
                data = wildboottestjlr:::create_data(N = 1000,
                                                     N_G1 = 20,
                                                     icc1 = 0.5,
@@ -208,20 +197,20 @@ if(run){
   # ------------------------------------------------------------------------------------------------------------------- #
   # Test Suite 3: test for exact equality of t_stat, t_boot, p_val under full enumeration (only for rademacher weights)
 
-  voters2 <<- fwildclusterboot:::create_data(N = 1000,
-                                           N_G1 = 5,
-                                           icc1 = 0.5,
-                                           N_G2 = 2,
-                                           icc2 = 0.2,
-                                           numb_fe1 = 5,
-                                           numb_fe2 = 5,
-                                           #seed = 41224,
-                                           seed = 1235107,
-                                           weights = 1:N / N)
-
-  N <- dim(voters2)[1]
-
-  voters2$dummy <- sample(c(0,1), N, TRUE)
+  # voters2 <<- fwildclusterboot:::create_data(N = 1000,
+  #                                          N_G1 = 5,
+  #                                          icc1 = 0.5,
+  #                                          N_G2 = 2,
+  #                                          icc2 = 0.2,
+  #                                          numb_fe1 = 5,
+  #                                          numb_fe2 = 5,
+  #                                          #seed = 41224,
+  #                                          seed = 1235107,
+  #                                          weights = 1:N / N)
+  #
+  # N <- dim(voters2)[1]
+  #
+  # voters2$dummy <- sample(c(0,1), N, TRUE)
 
   lm_fit2 <- lm(proposition_vote ~ treatment + Q1_immigration + Q2_defense,
                 weights = weights,
