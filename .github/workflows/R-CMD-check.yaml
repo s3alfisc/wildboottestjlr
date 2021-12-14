@@ -50,6 +50,9 @@ jobs:
       # add julia to renviron
       - name: Create and populate .Renviron file
         run: echo JULIA_BINDIR= "${{ env.juliaLocation }}" >> ~/.Renviron
+      # install WildBootTests.jl
+      - name: install WildBootTests.jl
+        run: julia -e 'Pkg.add("WildBootTests")'
 
       - uses: r-lib/actions/check-r-package@v1
 
