@@ -1,6 +1,6 @@
 # test that methods for lm(), feols() and fixest produces equivalent results
 
-run <- FALSE
+run <- TRUE
 
 if(run){
   library(wildboottestjlr)
@@ -50,9 +50,9 @@ if(run){
                      data = wildboottestjlr:::create_data(N = 1000, N_G1 = 20, icc1 = 0.01, N_G2 = 10, icc2 = 0.01, numb_fe1 = 10, numb_fe2 = 10, seed = 1234))
 
   # test with floattype64
-  pracma::tic()
+  # pracma::tic()
   boot_lm <-  suppressWarnings(boottest(object = lm_fit, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
-  pracma::toc()
+  # pracma::toc()
 
   boot_fixest <- suppressWarnings(boottest(object = feols_fit, clustid = c("group_id1"), B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
   boot_felm <- suppressWarnings(boottest(object = felm_fit, clustid =  "group_id1", B = 999, rng = 911, param = "treatment", conf_int = TRUE, floattype = "Float64"))
