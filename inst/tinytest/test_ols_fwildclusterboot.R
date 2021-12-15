@@ -42,20 +42,20 @@ if(run){
                         ))
   lm_fits <- list(lm_fit, lm_fit_weights)
 
-  object = lm_fit
-  impose_null = TRUE
-  type = "rademacher"
+  # object = lm_fit
+  # impose_null = TRUE
+  # type = "rademacher"
 
-  #for(object in lm_fits){
+  for(object in lm_fits){
 
     wildboottestjlr::set_julia_seed(12345)
     #fwildclusterboot:::set.fwildclusterboot.seed(12345)
     set.seed(12391786)
     dqrng::dqset.seed(8723467)
 
-  #  for(type in c("rademacher", "webb", "mammen", "norm")){
+    for(type in c("rademacher", "webb", "mammen", "norm")){
 
-  #    for(impose_null in c(TRUE, FALSE)){
+      for(impose_null in c(TRUE, FALSE)){
 
         # pracma::tic()
         boot_r <- fwildclusterboot::boottest(object, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed")
@@ -175,12 +175,12 @@ if(run){
         # boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = c("group_id1", "group_id2"), bootcluster = c("group_id1"),B = 499999, param = "treatment")
         # expect_equal(boot_r$p_val, boot_jl1$p_val[1], tolerance = reltol)
 
-  #     }
-  #
-  #   }
-  #
-  #
-  # }
+      }
+
+    }
+
+
+  }
 
 
   # ------------------------------------------------------------------------------------------------ #
