@@ -52,6 +52,7 @@
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fedfadj Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
+#' @param t_boot Logical. Should bootstrapped t-statistics be returned?
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @importFrom dreamerr check_arg validate_dots
@@ -148,6 +149,7 @@ boottest.felm <- function(object,
                           small_sample_adjustment = TRUE,
                           fedfadj = TRUE,
                           fweights = FALSE,
+                          t_boot = FALSE,
                           ...) {
 
   call <- match.call()
@@ -169,6 +171,8 @@ boottest.felm <- function(object,
   check_arg(small_sample_adjustment, "scalar logical")
   check_arg(fedfadj, "scalar logical")
   check_arg(fweights, "scalar logical")
+  check_arg(t_boot, "scalar logical")
+
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -384,12 +388,18 @@ boottest.felm <- function(object,
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
 
+
   # collect results:
   p_val <- WildBootTests$p(wildboottest_res)
-  conf_int <- WildBootTests$CI(wildboottest_res)
+  if(getCI == TRUE){
+    conf_int <- WildBootTests$CI(wildboottest_res)
+  } else{
+    conf_int <- NA
+  }
   t_stat <- WildBootTests$teststat(wildboottest_res)
-  t_boot <- WildBootTests$dist(wildboottest_res)
-
+  if(t_boot == TRUE){
+    t_boot <- WildBootTests$dist(wildboottest_res)
+  }
   res_final <- list(
     point_estimate = point_estimate,
     p_val = p_val,

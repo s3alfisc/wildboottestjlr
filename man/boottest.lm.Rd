@@ -24,6 +24,7 @@
   small_sample_adjustment = TRUE,
   fweights = FALSE,
   getauxweights = FALSE,
+  t_boot = FALSE,
   ...
 )
 }
@@ -90,6 +91,8 @@ when fitting the regression model).}
 \item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
 
 \item{getauxweights}{Logical. FALSE by default. Whether to save auxilliary weight matrix (v)}
+
+\item{t_boot}{Logical. Should bootstrapped t-statistics be returned?}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

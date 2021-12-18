@@ -48,6 +48,7 @@
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
 #' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
+#' @param t_boot Logical. Should bootstrapped t-statistics be returned?
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @import JuliaConnectoR
@@ -135,6 +136,7 @@ boottest.lm <- function(object,
                         small_sample_adjustment = TRUE,
                         fweights = FALSE,
                         getauxweights = FALSE,
+                        t_boot = FALSE,
                         ...) {
 
   call <- match.call()
@@ -154,6 +156,7 @@ boottest.lm <- function(object,
   check_arg(small_sample_adjustment, "scalar logical")
   check_arg(fweights, "scalar logical")
   check_arg(getauxweights, "scalar logical")
+  check_arg(t_boot, "scalar logical")
 
 
 
@@ -229,6 +232,7 @@ boottest.lm <- function(object,
   }
 
   # preprocess data: X, Y, weights, fixed effects
+  #pracma::tic()
   preprocess <- preprocess(object = object,
                            cluster = clustid,
                            fe = NULL,
@@ -236,6 +240,7 @@ boottest.lm <- function(object,
                            bootcluster = bootcluster,
                            na_omit = na_omit,
                            R = R)
+  #pracma::toc()
 
 
   clustid_dims <- preprocess$clustid_dims
@@ -360,15 +365,22 @@ boottest.lm <- function(object,
     eval_list[["fweights"]] <- fweights
   }
 
+  #pracma::tic()
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
-
+  #pracma::toc()
 
 
   # collect results:
   p_val <- WildBootTests$p(wildboottest_res)
-  conf_int <- WildBootTests$CI(wildboottest_res)
+  if(getCI == TRUE){
+    conf_int <- WildBootTests$CI(wildboottest_res)
+  } else{
+    conf_int <- NA
+  }
   t_stat <- WildBootTests$teststat(wildboottest_res)
-  t_boot <- WildBootTests$dist(wildboottest_res)
+  if(t_boot == TRUE){
+    t_boot <- WildBootTests$dist(wildboottest_res)
+  }
 
   getauxweights <- WildBootTests$auxweights(wildboottest_res)
 

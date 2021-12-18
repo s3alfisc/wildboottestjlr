@@ -48,6 +48,7 @@
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
+#' @param t_boot Logical. Should bootstrapped t-statistics be returned?
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @param ... Further arguments passed to or from other methods.
@@ -105,6 +106,7 @@ boottest.ivreg <- function(object,
                           floattype = "Float32",
                           small_sample_adjustment = TRUE,
                           fweights = FALSE,
+                          t_boot = FALSE,
                           ...){
 
   # check inputs
@@ -125,6 +127,7 @@ boottest.ivreg <- function(object,
   check_arg(floattype, "character scalar")
   check_arg(small_sample_adjustment, "scalar logical")
   check_arg(fweights, "scalar logical")
+  check_arg(t_boot, "scalar logical")
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -331,11 +334,18 @@ boottest.ivreg <- function(object,
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)
 
+
   # collect results:
   p_val <- WildBootTests$p(wildboottest_res)
-  conf_int <- WildBootTests$CI(wildboottest_res)
+  if(getCI == TRUE){
+    conf_int <- WildBootTests$CI(wildboottest_res)
+  } else{
+    conf_int <- NA
+  }
   t_stat <- WildBootTests$teststat(wildboottest_res)
-  t_boot <- WildBootTests$dist(wildboottest_res)
+  if(t_boot == TRUE){
+    t_boot <- WildBootTests$dist(wildboottest_res)
+  }
 
   res_final <- list(
     point_estimate = point_estimate,

@@ -25,6 +25,7 @@
   small_sample_adjustment = TRUE,
   fedfadj = TRUE,
   fweights = FALSE,
+  t_boot = FALSE,
   ...
 )
 }
@@ -95,6 +96,8 @@ when fitting the regression model).}
 \item{fedfadj}{Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?}
 
 \item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
+
+\item{t_boot}{Logical. Should bootstrapped t-statistics be returned?}
 
 \item{...}{Further arguments passed to or from other methods.}
 }
