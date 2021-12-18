@@ -2,7 +2,7 @@
 # testing via the tinytest package.
 
 # don't run tests on CRAN
-run_tests <- length(strsplit(packageDescription("fwildclusterboot")$Version, "\\.")[[1]]) > 3
+run_tests <- length(strsplit(packageDescription("fwildclusterboot")$Version, "\\.")[[1]]) >= 3
 
 if(run_tests){
 
@@ -284,6 +284,15 @@ if(run_tests){
   }
 
 
+  # ------------------------------------------------------------------------------------------------ #
+  # Test Suite 2: test that same seeds as specified via rng produce equivalent results:
+  boot_jl1 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 1)
+  boot_jl2 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 1)
+  boot_jl3 <- wildboottestjlr::boottest(lm_fit2, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 2)
+  expect_equal(boot_jl1$p_val[1], boot_jl2$p_val[1]) # expect exact equality
+  expect_equal(boot_jl1$p_val[1], boot_jl3$p_val[1], tolerance = reltol)
+  # ------------------------------------------------------------------------------------------------ #
+
 
 
 
@@ -292,13 +301,5 @@ if(run_tests){
 }
 
 
-# ------------------------------------------------------------------------------------------------ #
-# Test Suite 2: test that same seeds as specified via rng produce equivalent results:
-boot_jl1 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 1)
-boot_jl2 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 1)
-boot_jl3 <- wildboottestjlr::boottest(lm_fit, clustid = "group_id1", B = 99999, param = "treatment", type = type, p_val_type = "two-tailed", rng = 2)
-expect_equal(boot_jl1$p_val[1], boot_jl2$p_val[1]) # expect exact equality
-expect_equal(boot_jl1$p_val[1], boot_jl3$p_val[1], tolerance = reltol)
-# ------------------------------------------------------------------------------------------------ #
 
 
