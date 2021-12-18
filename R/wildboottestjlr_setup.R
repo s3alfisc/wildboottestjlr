@@ -3,7 +3,7 @@ wildboottestjlr_setup <- function(){
   #' install Julia, connect R and Julia, install and pre-compile WildBootTests.jl
   #' @importFrom JuliaConnectoR juliaEval
   #' @importFrom utils install.packages installed.packages
-
+  #' @export
 
   required_packages <- c("JuliaCall", "usethis")
   missing_packages <- setdiff(required_packages, rownames(installed.packages()))
