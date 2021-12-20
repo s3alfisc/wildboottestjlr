@@ -75,6 +75,8 @@
 #'  \item{t_boot}{All bootstrap t-statistics.}
 #' \item{regression}{The regression object used in boottest.}
 #' \item{call}{Function call of boottest.}
+#' \item{getauxweights}{The bootstrap auxiliary weights matrix v. Only returned if getauxweights = TRUE.}
+#' \item{t_boot}{The bootstrapped t-statistics. Only returned if t_boot = TRUE.}
 #'
 #' @export
 #'
@@ -382,7 +384,9 @@ boottest.lm <- function(object,
     t_boot <- WildBootTests$dist(wildboottest_res)
   }
 
-  getauxweights <- WildBootTests$auxweights(wildboottest_res)
+  if(getauxweights == TRUE){
+    getauxweights <- WildBootTests$auxweights(wildboottest_res)
+  }
 
   res_final <- list(
     point_estimate = point_estimate,
@@ -392,6 +396,7 @@ boottest.lm <- function(object,
     # test_vals = res_p_val$grid_vals,
     t_stat = t_stat,
     t_boot = t_boot,
+    auxweights = getauxweights,
     #regression = res$object,
     param = param,
     N = preprocess$N,

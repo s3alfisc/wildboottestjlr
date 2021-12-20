@@ -23,6 +23,7 @@
   floattype = "Float32",
   small_sample_adjustment = TRUE,
   fweights = FALSE,
+  getauxweights = FALSE,
   t_boot = FALSE,
   ...
 )
@@ -89,6 +90,8 @@ when fitting the regression model).}
 
 \item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
 
+\item{getauxweights}{Logical. FALSE by default. Whether to save auxilliary weight matrix (v)}
+
 \item{t_boot}{Logical. Should bootstrapped t-statistics be returned?}
 
 \item{...}{Further arguments passed to or from other methods.}
@@ -112,6 +115,8 @@ confidence interval.}
 \item{t_boot}{All bootstrap t-statistics.}
 \item{regression}{The regression object used in boottest.}
 \item{call}{Function call of boottest.}
+\item{getauxweights}{The bootstrap auxiliary weights matrix v. Only returned if getauxweights = TRUE.}
+\item{t_boot}{The bootstrapped t-statistics. Only returned if t_boot = TRUE.}
 }
 \description{
 \code{boottest.ivreg} is a S3 method that allows for fast wild cluster

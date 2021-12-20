@@ -52,6 +52,7 @@
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fedfadj Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
+#' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
 #' @param t_boot Logical. Should bootstrapped t-statistics be returned?
 #' @param ... Further arguments passed to or from other methods.
 #' @importFrom dreamerr check_arg validate_dots
@@ -76,6 +77,9 @@
 #'  \item{t_boot}{All bootstrap t-statistics.}
 #' \item{regression}{The regression object used in boottest.}
 #' \item{call}{Function call of boottest.}
+#' \item{getauxweights}{The bootstrap auxiliary weights matrix v. Only returned if getauxweights = TRUE.}
+#' \item{t_boot}{The bootstrapped t-statistics. Only returned if t_boot = TRUE.}
+#'
 #' @export
 #' @method boottest fixest
 #' @references Roodman et al., 2019, "Fast and wild: Bootstrap inference in
@@ -146,6 +150,7 @@ boottest.fixest <- function(object,
                             small_sample_adjustment = TRUE,
                             fedfadj = TRUE,
                             fweights = FALSE,
+                            getauxweights = FALSE,
                             t_boot = FALSE,
                             ...) {
 
@@ -171,6 +176,8 @@ boottest.fixest <- function(object,
   check_arg(fedfadj, "scalar logical")
   check_arg(fweights, "scalar logical")
   check_arg(t_boot, "scalar logical")
+  check_arg(getauxweights, "scalar logical")
+
 
   if(!(floattype %in% c("Float32", "Float64"))){
     stop("floattype needs either to be 'Float32' or 'Float64'.")
@@ -409,6 +416,10 @@ boottest.fixest <- function(object,
     t_boot <- WildBootTests$dist(wildboottest_res)
   }
 
+  if(getauxweights == TRUE){
+    getauxweights <- WildBootTests$auxweights(wildboottest_res)
+  }
+
   res_final <- list(
     point_estimate = point_estimate,
     p_val = p_val,
@@ -417,6 +428,7 @@ boottest.fixest <- function(object,
     # test_vals = res_p_val$grid_vals,
     t_stat = t_stat,
     t_boot = t_boot,
+    auxweights = getauxweights,
     #regression = res$object,
     param = param,
     N = preprocess$N,

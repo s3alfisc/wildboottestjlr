@@ -48,6 +48,7 @@
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
 #' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
+#' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
 #' @param t_boot Logical. Should bootstrapped t-statistics be returned?
 #' @param ... Further arguments passed to or from other methods.
 #'
@@ -75,6 +76,8 @@
 #'  \item{t_boot}{All bootstrap t-statistics.}
 #' \item{regression}{The regression object used in boottest.}
 #' \item{call}{Function call of boottest.}
+#' \item{getauxweights}{The bootstrap auxiliary weights matrix v. Only returned if getauxweights = TRUE.}
+#' \item{t_boot}{The bootstrapped t-statistics. Only returned if t_boot = TRUE.}
 #'
 #' @export
 #'
@@ -106,6 +109,7 @@ boottest.ivreg <- function(object,
                           floattype = "Float32",
                           small_sample_adjustment = TRUE,
                           fweights = FALSE,
+                          getauxweights = FALSE,
                           t_boot = FALSE,
                           ...){
 
@@ -128,6 +132,7 @@ boottest.ivreg <- function(object,
   check_arg(small_sample_adjustment, "scalar logical")
   check_arg(fweights, "scalar logical")
   check_arg(t_boot, "scalar logical")
+  check_arg(getauxweights, "scalar logical")
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -347,6 +352,10 @@ boottest.ivreg <- function(object,
     t_boot <- WildBootTests$dist(wildboottest_res)
   }
 
+  if(getauxweights == TRUE){
+    getauxweights <- WildBootTests$auxweights(wildboottest_res)
+  }
+
   res_final <- list(
     point_estimate = point_estimate,
     p_val = p_val,
@@ -355,6 +364,7 @@ boottest.ivreg <- function(object,
     # test_vals = res_p_val$grid_vals,
     t_stat = t_stat,
     t_boot = t_boot,
+    auxweights = getauxweights,
     #regression = res$object,
     param = param,
     N = preprocess$N,
