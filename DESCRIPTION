@@ -20,11 +20,12 @@ Imports:
     JuliaConnectoR,
     Formula,
     dreamerr,
-    generics,
-    fwildclusterboot
+    generics
 Suggests: 
+    fwildclusterboot,
     fixest,
     lfe,
+    ivreg,
     data.table,
     fabricatr,
     knitr,
