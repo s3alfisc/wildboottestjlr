@@ -7,7 +7,7 @@
 boottest(object, ...)
 }
 \arguments{
-\item{object}{An object of type lm, fixest of felm}
+\item{object}{An object of type lm, fixest, felm or ivreg}
 
 \item{...}{other arguments}
 }
@@ -16,7 +16,7 @@ An object of class \code{boottest}.
 }
 \description{
 \code{boottest} is a S3 method that allows for fast wild cluster
-bootstrap inference for objects of class lm, fixest and felm by  implementing
+bootstrap inference for objects of class lm, fixest, felm and ivreg by  implementing
 the fast wild bootstrap algorithm developed in Roodman et al., 2019.
 }
 \references{
@@ -33,5 +33,5 @@ MacKinnon, James. "Wild cluster bootstrap confidence intervals." L'Actualite eco
 Webb, Matthew D. Reworking wild bootstrap based inference for clustered errors. No. 1315. Queen's Economics Department Working Paper, 2013.
 }
 \seealso{
-\link[fwildclusterboot]{boottest.lm}, \link[fwildclusterboot]{boottest.fixest} and \link[fwildclusterboot]{boottest.felm}
+\link[wildboottestjlr]{boottest.lm}, \link[wildboottestjlr]{boottest.fixest}, \link[fwildclusterboot]{boottest.felm} or \link[wildboottestjlr]{boottest.ivreg}
 }
