@@ -11,7 +11,7 @@ Authors@R:
            family = "Roodman", 
            role = "aut")
     )
-Description: This package is an R port to WildBootTests.jl, which performs wild bootstrap-based hypothesis tests in Julia at extreme speed.
+Description: wildboottestjlr is an R port to WildBootTests.jl, which performs wild bootstrap-based hypothesis tests in Julia at extreme speed.
              It is intended mainly for linear models: ordinary least squares (OLS) and instrumental variables/two-stage least squares (IV/2SLS). 
              For an introduction to the wild bootstrap and the algorithms deployed in WildBootTest.jl, see Roodman et al. (2019).
              Right now, wildboottestjlr allows R users to call functionality in WildBootTests.jl on objects of type lm, fixest, felm and ivreg (from base/stats, fixest, lfe and the 
