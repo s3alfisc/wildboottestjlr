@@ -54,6 +54,9 @@
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
 #' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
 #' @param t_boot Logical. Should bootstrapped t-statistics be returned?
+#' @param turbo Logical scalar, FALSE by default. Whether to exploit acceleration of the LoopVectorization package: slower on first use in a session, faster after
+#' @param maxmatsize NULL by default = no limit. Else numeric scalar to set the maximum size of auxilliary weight matrix (v), in gigabytes
+#' @param bootstrapc Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t
 #' @param ... Further arguments passed to or from other methods.
 #' @importFrom dreamerr check_arg validate_dots
 
@@ -152,6 +155,9 @@ boottest.fixest <- function(object,
                             fweights = FALSE,
                             getauxweights = FALSE,
                             t_boot = FALSE,
+                            turbo = FALSE,
+                            maxmatsize = NULL,
+                            bootstrapc = FALSE,
                             ...) {
 
 
@@ -177,6 +183,9 @@ boottest.fixest <- function(object,
   check_arg(fweights, "scalar logical")
   check_arg(t_boot, "scalar logical")
   check_arg(getauxweights, "scalar logical")
+  check_arg(turbo, "scalar logical")
+  check_arg(maxmatsize, "scalar integer | NULL")
+  check_arg(bootstrapc, "scalar logical")
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -307,7 +316,11 @@ boottest.fixest <- function(object,
 
   resp <- as.numeric(preprocess$Y)
   predexog <- preprocess$X
-  R <- matrix(preprocess$R, 1, length(preprocess$R))
+  if(is.matrix(preprocess$R)){
+    R <- preprocess$R
+  } else {
+    R <- matrix(preprocess$R, 1, length(preprocess$R))
+  }
   r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
@@ -392,12 +405,18 @@ boottest.fixest <- function(object,
                     auxwttype = auxwttype,
                     ptype = ptype,
                     reps = reps,
-                    fweights = fweights
+                    fweights = fweights,
+                    turbo = turbo,
+                    bootstrapc = bootstrapc
   )
 
   if(!is.null(fe)){
     eval_list[["feid"]] <- feid
     eval_list[["fedfadj"]] <- fedfadj
+  }
+
+  if(!is.null(maxmatsize)){
+    eval_list[["maxmatsize"]] <- maxmatsize
   }
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)

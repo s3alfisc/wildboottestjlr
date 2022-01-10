@@ -25,6 +25,9 @@
   fweights = FALSE,
   getauxweights = FALSE,
   t_boot = FALSE,
+  turbo = FALSE,
+  maxmatsize = NULL,
+  bootstrapc = FALSE,
   ...
 )
 }
@@ -93,6 +96,12 @@ when fitting the regression model).}
 \item{getauxweights}{Logical. FALSE by default. Whether to save auxilliary weight matrix (v)}
 
 \item{t_boot}{Logical. Should bootstrapped t-statistics be returned?}
+
+\item{turbo}{Logical scalar, FALSE by default. Whether to exploit acceleration of the LoopVectorization package: slower on first use in a session, faster after}
+
+\item{maxmatsize}{NULL by default = no limit. Else numeric scalar to set the maximum size of auxilliary weight matrix (v), in gigabytes}
+
+\item{bootstrapc}{Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

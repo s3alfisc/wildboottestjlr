@@ -22,7 +22,8 @@
 #' @param conf_int A logical vector. If TRUE, boottest computes confidence
 #'        intervals by p-value inversion. If FALSE, only the p-value is returned.
 #' @param rng An integer. Controls the random number generation, which is handled via the `StableRNG()` function from the `StableRNGs` Julia package.
-#' @param R Hypothesis Vector giving linear combinations of coefficients. Must be either NULL or a vector of the same length as `param`. If NULL, a vector of ones of length param.
+#' @param R Hypothesis Vector giving linear combinations of coefficients. Must be either NULL OR a vector of the same length as `param` OR a matrix of dimension q x k, where q is the number
+#'        of joint hypotheses and k the number of estimated coefficients. If NULL, a vector of ones of length param.
 #' @param beta0 A numeric. Shifts the null hypothesis
 #'        H0: param = beta0 vs H1: param != beta0
 #' @param type character or function. The character string specifies the type
@@ -49,6 +50,9 @@
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
 #' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
 #' @param t_boot Logical. Should bootstrapped t-statistics be returned?
+#' @param turbo Logical scalar, FALSE by default. Whether to exploit acceleration of the LoopVectorization package: slower on first use in a session, faster after
+#' @param maxmatsize NULL by default = no limit. Else numeric scalar to set the maximum size of auxilliary weight matrix (v), in gigabytes
+#' @param bootstrapc Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @import JuliaConnectoR
@@ -139,6 +143,9 @@ boottest.lm <- function(object,
                         fweights = FALSE,
                         getauxweights = FALSE,
                         t_boot = FALSE,
+                        turbo = FALSE,
+                        maxmatsize = NULL,
+                        bootstrapc = FALSE,
                         ...) {
 
   call <- match.call()
@@ -150,8 +157,8 @@ boottest.lm <- function(object,
   check_arg(sign_level, "scalar numeric")
   check_arg(conf_int, "logical scalar | NULL")
   check_arg(rng, "scalar integer | NULL")
-  check_arg(R, "NULL| scalar numeric | numeric vector")
-  check_arg(beta0, "numeric scalar | NULL")
+  check_arg(R, "NULL| scalar numeric | numeric vector | numeric matrix")
+  check_arg(beta0, "numeric scalar | numeric vector | NULL")
   check_arg(bootcluster, "character vector")
   check_arg(tol, "numeric scalar")
   check_arg(floattype, "character scalar")
@@ -159,7 +166,16 @@ boottest.lm <- function(object,
   check_arg(fweights, "scalar logical")
   check_arg(getauxweights, "scalar logical")
   check_arg(t_boot, "scalar logical")
+  check_arg(turbo, "scalar logical")
+  check_arg(maxmatsize, "scalar integer | NULL")
+  check_arg(bootstrapc, "scalar logical")
 
+  # nrow_R <- nrow(R)
+  # if(nrow_R > 1 && (is.null(conf_int) || conf_int == TRUE)){
+  #   message(paste("The hypothesis tests", nrow_R, "joint hypothesis and conf_int = TRUE. boottest() does not compute confidence intervals for hypotheses with q>1, and therefore we set conf_int = FALSE."))
+  #   # even better: manipulate call
+  #   conf_int <- FALSE
+  # }
 
 
   if(!(floattype %in% c("Float32", "Float64"))){
@@ -206,7 +222,7 @@ boottest.lm <- function(object,
   if(is.null(R)){
     R <- rep(1, length(param))
   } else {
-    if(length(R) != length(param)){
+    if(is.vector(R) && length(R) != length(param)){
       stop("The constraints vector must either be NULL or a numeric of the same length as the `param` input vector.")
     }
   }
@@ -272,7 +288,11 @@ boottest.lm <- function(object,
 
   resp <- as.numeric(preprocess$Y)
   predexog <- preprocess$X
-  R <- matrix(preprocess$R, 1, length(preprocess$R))
+  if(is.matrix(preprocess$R)){
+    R <- preprocess$R
+  } else {
+    R <- matrix(preprocess$R, 1, length(preprocess$R))
+  }
   r <- beta0
   reps <- as.integer(B) # WildBootTests.jl demands integer
 
@@ -359,12 +379,18 @@ boottest.lm <- function(object,
                     ptype = ptype,
                     auxwttype = auxwttype,
                     reps = reps,
-                    getauxweights = getauxweights
+                    getauxweights = getauxweights,
+                    turbo = turbo,
+                    bootstrapc = bootstrapc
                     )
 
   if(mean(preprocess$weights == 1) != 1){
     eval_list[["obswt"]] <- preprocess$weights
     eval_list[["fweights"]] <- fweights
+  }
+
+  if(!is.null(maxmatsize)){
+    eval_list[["maxmatsize"]] <- maxmatsize
   }
 
   #pracma::tic()
