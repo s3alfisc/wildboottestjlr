@@ -256,6 +256,10 @@ Log.Lik.
 </tbody>
 </table>
 
+``` r
+# plot(boot_lm)
+```
+
 ### The Wild Bootstrap for IV (WRE)
 
 If `boottest()` is applied based on an object of type `ivreg`, the WRE
@@ -286,8 +290,6 @@ summary(boot_ivreg)
 #>  Confidence Sets: 95%
 #>  Number of Clusters: 9
 #> 
-#>              term estimate statistic p.value conf.low conf.high
-#> 1 1*education = 0     0.09     2.201   0.014    0.015     0.214
 ```
 
 ## Benchmarks

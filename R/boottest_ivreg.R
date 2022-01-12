@@ -53,8 +53,10 @@
 #' @param turbo Logical scalar, FALSE by default. Whether to exploit acceleration of the LoopVectorization package: slower on first use in a session, faster after
 #' @param maxmatsize NULL by default = no limit. Else numeric scalar to set the maximum size of auxilliary weight matrix (v), in gigabytes
 #' @param bootstrapc Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t
-#' @param ... Further arguments passed to or from other methods.
-#'
+#' @param LIML Logical scalar. False by default. TRUE for LIML or Fuller LIML
+#' @param Fuller NULL by default. Numeric scalar. Fuller LIML factor
+#' @param kappa Null by default. fixed κ for _k_-class estimation
+#' @param ARubin. False by default. Logical scalar. TRUE for Anderson-Rubin Test.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @importFrom dreamerr check_arg validate_dots
@@ -117,6 +119,10 @@ boottest.ivreg <- function(object,
                           turbo = FALSE,
                           maxmatsize = NULL,
                           bootstrapc = FALSE,
+                          LIML = FALSE,
+                          Fuller = NULL,
+                          kappa = NULL,
+                          ARubin = FALSE,
                           ...){
 
   # check inputs
@@ -142,7 +148,11 @@ boottest.ivreg <- function(object,
   check_arg(turbo, "scalar logical")
   check_arg(maxmatsize, "scalar integer | NULL")
   check_arg(bootstrapc, "scalar logical")
-
+  # IV specific arguments
+  check_arg(LIML, "scalar logical")
+  check_arg(Fuller, "NULL | scalar numeric")
+  check_arg(kappa, "NULL | scalar numeric")
+  check_arg(ARubin, "scalar logical")
 
   if(!(floattype %in% c("Float32", "Float64"))){
     stop("floattype needs either to be 'Float32' or 'Float64'.")
@@ -347,12 +357,22 @@ boottest.ivreg <- function(object,
                     reps = reps,
                     fweights = fweights,
                     turbo = turbo,
-                    bootstrapc = bootstrapc
+                    bootstrapc = bootstrapc,
+                    LIML = LIML,
+                    ARubin = ARubin
 
   )
 
   if(!is.null(maxmatsize)){
     eval_list[["maxmatsize"]] <- maxmatsize
+  }
+
+  if(!is.null(Fuller)){
+    eval_list[["Fuller"]] <- Fuller
+  }
+
+  if(!is.null(kappa)){
+    eval_list[["kappa"]] <- kappa
   }
 
   wildboottest_res <- do.call(WildBootTests$wildboottest, eval_list)

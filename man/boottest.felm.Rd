@@ -112,14 +112,6 @@ when fitting the regression model).}
 \item{bootstrapc}{Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t}
 
 \item{...}{Further arguments passed to or from other methods.}
-
-\item{LIML}{Logical scalar. False by default. TRUE for LIML or Fuller LIML}
-
-\item{Fuller}{NULL by default. Numeric scalar. Fuller LIML factor}
-
-\item{kappa}{Null by default. fixed κ for \emph{k}-class estimation}
-
-\item{ARubin.}{False by default. Logical scalar. TRUE for Anderson-Rubin Test.}
 }
 \value{
 An object of class \code{boottest}

@@ -407,7 +407,7 @@ boottest.fixest <- function(object,
                     reps = reps,
                     fweights = fweights,
                     turbo = turbo,
-                    bootstrapc = bootstrapc,
+                    bootstrapc = bootstrapc
   )
 
   if(!is.null(fe)){

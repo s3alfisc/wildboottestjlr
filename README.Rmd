@@ -102,6 +102,8 @@ msummary(list(boot_lm, boot_feols, boot_felm),
         estimate = "{estimate} ({p.value})", 
         statistic = "[{conf.low}, {conf.high}]"
         )  
+
+# plot(boot_lm)
 ```
 
 ### The Wild Bootstrap for IV (WRE)
