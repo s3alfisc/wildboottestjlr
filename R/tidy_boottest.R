@@ -11,7 +11,12 @@ tidy.boottest <- function(object, ...) {
   stopifnot(inherits(object, "boottest"))
   #dreamerr::validate_dots(stop = TRUE)
 
-    hypothesis <- paste(paste0(paste0(object$R[which(object$R != 0)], "*"), object$param, collapse = "+"),"=", object$beta0)
+    R <- object$R
+    if(nrow(R) == 1){
+      hypothesis <- paste(paste0(paste0(object$R[which(object$R != 0)], "*"), object$param, collapse = "+"),"=", object$beta0)
+    } else {
+      hypothesis <- "multivariate"
+    }
 
     term <- hypothesis
     estimate <- object$point_estimate
@@ -68,8 +73,12 @@ summary.boottest <- function(object, digits = 3, ...) {
   tidy_object <- as.data.frame(tidy_object)
   names(tidy_object) <- tidy_names
 
-  hypothesis <- paste(paste0(paste0(object$R[which(object$R != 0)], "*"), object$param, collapse = "+"),"=", object$beta0)
-
+  R <- object$R
+  if(nrow(R) == 1){
+    hypothesis <- paste(paste0(paste0(object$R[which(object$R != 0)], "*"), object$param, collapse = "+"),"=", object$beta0)
+  } else {
+    hypothesis <- "multivariate"
+  }
 
   print(call)
   cat(
@@ -85,35 +94,35 @@ summary.boottest <- function(object, digits = 3, ...) {
     # sprintf("Adj. R-Squared: %s\n", round(adj_r_squared,6)),
     sprintf("%s\n", "")
   )
-
-  return(tidy_object)
 }
 
 plot.boottest <- function(x, ...) {
 
-  #' Plot the bootstrap distribution of t-statistics
-  #' @param x An object of type boottest
-  #' @param ... Further arguments passed to or from other methods.
-  #' @method plot boottest
-  #' @export
-  #' @return A plot of bootstrap t-statistics under different null hypotheses
+    #' Plot the bootstrap distribution of t-statistics
+    #' @param x An object of type boottest
+    #' @param ... Further arguments passed to or from other methods.
+    #' @method plot boottest
+    #' @export
+    #' @return A plot of bootstrap t-statistics under different null hypotheses
+    #' @import generics
 
+    stopifnot(inherits(x, "boottest"))
+    dreamerr::validate_dots(stop = TRUE)
 
-  stopifnot(inherits(x, "boottest"))
-  dreamerr::validate_dots(stop = TRUE)
+    plotpoints <- x$plotpoints
+    test_vals <- plotpoints[,1]
+    p_test_vals <- plotpoints[,2]
+    conf_int <- x$conf_int
+    sign_level <- x$sign_level
+    xlab <- x$param
 
-  test_vals <- x$test_vals
-  p_test_vals <- x$p_test_vals
-  conf_int <- x$conf_int
-  sign_level <- x$sign_level
-  xlab <- x$param
-
-  graphics::plot(x = test_vals, y = p_test_vals, type = "b", pch = 20, lty = 2, xlab = xlab, ylab = "p-value")
-  graphics::lines(test_vals, p_test_vals, type = "l", lty = 1)
-  graphics::abline(v = conf_int[1], col = "blue")
-  graphics::abline(v = conf_int[2], col = "blue")
-  graphics::abline(h = sign_level, col = "red")
+    graphics::plot(x = test_vals, y = p_test_vals, type = "b", pch = 20, lty = 2, xlab = xlab, ylab = "p-value")
+    graphics::lines(test_vals, p_test_vals, type = "l", lty = 1)
+    graphics::abline(v = conf_int[1], col = "blue")
+    graphics::abline(v = conf_int[2], col = "blue")
+    graphics::abline(h = sign_level, col = "red")
 }
+
 
 glance.boottest <- function(x, ...){
 

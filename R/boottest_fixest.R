@@ -407,7 +407,7 @@ boottest.fixest <- function(object,
                     reps = reps,
                     fweights = fweights,
                     turbo = turbo,
-                    bootstrapc = bootstrapc
+                    bootstrapc = bootstrapc,
   )
 
   if(!is.null(fe)){
@@ -439,6 +439,10 @@ boottest.fixest <- function(object,
     getauxweights <- WildBootTests$auxweights(wildboottest_res)
   }
 
+  plotpoints <- WildBootTests$plotpoints(wildboottest_res)
+  plotpoints <- cbind(plotpoints$X[[1]], plotpoints$p)
+
+
   res_final <- list(
     point_estimate = point_estimate,
     p_val = p_val,
@@ -460,7 +464,8 @@ boottest.fixest <- function(object,
     type = type,
     impose_null = impose_null,
     R = R,
-    beta0 = beta0
+    beta0 = beta0,
+    plotpoints = plotpoints
   )
 
 
