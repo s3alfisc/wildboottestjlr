@@ -5,18 +5,22 @@ wildboottestjlr_setup <- function(){
   #' @importFrom utils install.packages installed.packages
   #' @export
 
-  required_packages <- c("JuliaCall", "usethis")
-  missing_packages <- setdiff(required_packages, rownames(installed.packages()))
 
-  if(length(missing_packages) != 0){
-    install_packages <- readline(prompt= 'To set up Julia and wildboottestjlr via "wildboottestjlr_setup(), the "JuliaCall" and "usethis" packages need to be installed. At least one of the two packges is currently not installed. To install, type YES, else NO.' )
-    if(is.logical(install_packages)){
-      install.packages(missing_packages)
+  install_julia <- readline(prompt= "Install Julia? If Yes, type 'Yes', else 'No': " )
+  if(install_julia == "Yes"){
+    install_julia <- TRUE
+    if(!require(JuliaCall)){
+      install_JuliaCall <- readline("To install Julia from within R, the JuliaCall package needs to be installed. To install the JuliaCall package, type 'Yes', else 'No':")
+      if(install_JuliaCall){
+        install.packages(JuliaCall)
+      } else {
+        stop("Please download Julia from https://julialang.org/downloads/.")
+      }
     }
+
+  } else if(install_julia == "No"){
+    install_julia <- FALSE
   }
-
-
-  install_julia <- readline(prompt= "Install Julia? If Yes, type TRUE, else FALSE: " )
 
   # if(!is.logical(install_julia)){
   #   cat("Please provide a logical: TRUE if you want to install Julia, and FALSE if not.")
@@ -26,25 +30,49 @@ wildboottestjlr_setup <- function(){
     JuliaCall::install_julia()
   }
 
-  connect_r_julia <- readline('Have you already added your Julia path to your renviron file? If yes, type "YES", else type "NO": ')
-  if(connect_r_julia == "NO"){
-    message('Add JULIA_BINDIR= ".../Julia-1.X.X/bin" to your renviron file and save the changes.
-    Restart your R session and rerun wildboottestjlr_setup(), but skip all completed steps.', appendLF = FALSE)
+  connect_r_julia <- readline("Have you already added your Julia path to your renviron file? If yes, type 'Yes', else type 'No': ")
+  if(connect_r_julia == "No"){
+    # check if usethis is installed
+    if(!require(usethis)){
+      install_usethis <- readline("To set the path to Julia from within R, the 'usethis' package needs to be installed. Reply 'Yes' to install 'usethis':")
+      if(install_usethis){
+        install.packages(usethis)
+      } else {
+        stop("wildboottestjlr_setup() cannot proceed without the 'usethis' package.")
+      }
+    }
+    message("Add JULIA_BINDIR= '.../Julia-1.X.X/bin' to your renviron file and save the changes.
+    Restart your R session and rerun wildboottestjlr_setup(), but skip all previously completed steps.", appendLF = FALSE)
     suppressMessages(usethis::edit_r_environ())
   }
 
-  if(connect_r_julia == "YES"){
+  if(connect_r_julia == "Yes"){
 
-    install_wildboottests <- readline(prompt="Install WildBootTests.jl? If Yes, type TRUE, else FALSE: " )
+    install_wildboottests <- readline(prompt="Install WildBootTests.jl? If Yes, type 'Yes', else 'No': " )
+    if(install_wildboottests == "Yes"){
+      install_wildboottests <- TRUE
+    } else if(install_wildboottests == "No"){
+      install_wildboottests <- FALSE
+    } else {
+      install_wildboottests <- readline(prompt= paste0("You need to reply with 'Yes' or 'No', but you replied with ", install_wildboottests, ". Please reply with 'Yes' or 'No': "))
+      if(install_wildboottests == "Yes"){
+        install_wildboottests <- TRUE
+      } else {
+        message("WildBootTests.jl will not be installed.")
+        install_wildboottests <- FALSE
+      }
+    }
 
     if(as.logical(install_wildboottests)){
       JuliaConnectoR::juliaEval("using Pkg")
       JuliaConnectoR::juliaEval('Pkg.add("WildBootTests")')
-      cat("Pre-compile WildBootTests.jl. This might take a few seconds.")
+      cat("Pre-compile WildBootTests.jl. This might take a few seconds.", "\n")
       JuliaConnectoR::juliaEval("using WildBootTests")
     }
 
   }
+
+  cat("Great! wildboottestjlr is ready for use!", "\n")
 
 
 }
