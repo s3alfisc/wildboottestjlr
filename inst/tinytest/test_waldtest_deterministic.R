@@ -22,12 +22,15 @@ if(run_tests){
                                           seed = 90864369,
                                           weights = 1:N / N)
 
-  lm_fit <- lm(proposition_vote ~ treatment  + log_income ,
+
+  lm_fit <- lm(proposition_vote ~ treatment  + log_income + income + year,
                data = data1)
 
+  N <- nrow(data1)
+  k <- length(coef(lm_fit))
+  G <- length(unique(data1$group_id1))
 
-
-  lm_fit_weights <- lm(proposition_vote ~ treatment  + log_income  ,
+  lm_fit_weights <- lm(proposition_vote ~ treatment  + log_income,
                        weights = data1$weights,
                        data = data1)
   lm_fits <- list(ols = lm_fit, wls = lm_fit_weights)
@@ -58,27 +61,32 @@ if(run_tests){
 
             # one hypothesis
             R <- clubSandwich::constrain_zero(constraints = 2, coefs = coef(object))
-            boot_jl <- wildboottestjlr::waldtest(object, R = R, clustid = "group_id1", B = 99999, type = type, p_val_type = p_val_type, impose_null = impose_null)
+            boot_jl <- wildboottestjlr::waldtest(object, R = R, clustid = "group_id1", B = 999, type = type, p_val_type = p_val_type, impose_null = impose_null)
             clubSw <- clubSandwich::coef_test(obj = object, vcov = clubSandwich::vcovCR(obj = object,
                                                                                               cluster = data1$group_id1,
                                                                                                type = "CR1S"))
             expect_equivalent(round(boot_jl$t_stat, 5), round(clubSw$tstat[2],5))
 
             # two hypotheses
-            # R <- clubSandwich::constrain_zero(constraints = 1:2, coefs = coef(object))
-            # boot_jl <- wildboottestjlr::waldtest(object,
-            #                                      R = R,
-            #                                      clustid = "group_id1",
-            #                                      B = 99999,
-            #                                      type = type,
-            #                                      p_val_type = p_val_type,
-            #                                      impose_null = impose_null)
-            # clubSw <- clubSandwich::Wald_test(obj = object,
-            #                                   constraints = R,
-            #                                   vcov = clubSandwich::vcovCR(obj = object,
-            #                                                               cluster = data1$group_id1,
-            #                                                               type = "CR1S"))
-            # expect_equivalent(round(boot_jl$t_stat, 5), round(clubSw$Fstat,5))
+            R <- clubSandwich::constrain_zero(constraints = 1:2, coefs = coef(object))
+            R <- clubSandwich::constrain_equal(constraints = 2:4, coefs = coef(object))
+
+            boot_jl <- wildboottestjlr::waldtest(object,
+                                                R = R,
+                                                clustid = "group_id1",
+                                                B = 999,
+                                                type = type,
+                                                p_val_type = p_val_type,
+                                                impose_null = impose_null,
+                                                ssc = wildboottestjlr::boot_ssc(adj = FALSE,
+                                                                                cluster.adj = FALSE))
+            clubSw <- clubSandwich::Wald_test(obj = object,
+                                             constraints = R,
+                                             vcov = clubSandwich::vcovCR(obj = object,
+                                                                         cluster = data1$group_id1,
+                                                                         type = "CR0"))
+            expect_equivalent(round(boot_jl$t_stat, 5), round(clubSw$Fstat,5))
+
 
             # test <- WildBootTests$wildboottest(R, r = c(0, 0), resp=data1$proposition_vote, predexog=cbind(1, data1$treatment, data1$log_income), clustid=data1$group_id1)
             # WildBootTests$teststat(test) # [1] 209.5094

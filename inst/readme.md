@@ -9,6 +9,8 @@ Note that these unit tests might run for a long time (around 30 minutes).
 
 + In [test_iv.R](), `wildboottestjlr's` IV method is tested against the Stata implementation of the wild cluster bootstrap, `boottest`. This is still to be done.
 
++ In [test_waldtest_deterministic.R](), we check if the non-bootstrapped F-statistics computed in `wildboottestjlr()` are identical to F-statistics calculated via the `clubSandwich::Wald_test()` function.
+
 ## Internal Tests: Does it matter if the bootstrap is applied to objects of type `lm`, `feols` or `felm`? 
 
 As `fwildclusterboot` and `wildboottestjlr` share the same preprocessing, this is outsourced to the `fwildclusterboot` testing suite. 
