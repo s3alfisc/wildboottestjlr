@@ -22,7 +22,6 @@
   tol = 1e-06,
   na_omit = TRUE,
   floattype = "Float32",
-  small_sample_adjustment = TRUE,
   fedfadj = TRUE,
   fweights = FALSE,
   getauxweights = FALSE,
@@ -30,6 +29,8 @@
   turbo = FALSE,
   maxmatsize = NULL,
   bootstrapc = FALSE,
+  ssc = boot_ssc(adj = TRUE, fixef.K = "none", cluster.adj = TRUE, cluster.df =
+    "conventional"),
   ...
 )
 }
@@ -95,8 +96,6 @@ when fitting the regression model).}
 
 \item{floattype}{Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?}
 
-\item{small_sample_adjustment}{Logical. True by default. Should small sample adjustments be applied?}
-
 \item{fedfadj}{Logical. TRUE by default. Should the small-sample adjustment reflect number of fixed effects?}
 
 \item{fweights}{Logical. FALSE by default, TRUE for frequency weights.}
@@ -110,6 +109,9 @@ when fitting the regression model).}
 \item{maxmatsize}{NULL by default = no limit. Else numeric scalar to set the maximum size of auxilliary weight matrix (v), in gigabytes}
 
 \item{bootstrapc}{Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t}
+
+\item{ssc}{An object of class \code{boot_ssc.type} obtained with the function \code{\link[fwildclusterboot]{boot_ssc}}. Represents how the small sample adjustments are computed. The defaults are \verb{adj = TRUE, fixef.K = "none", cluster.adj = "TRUE", cluster.df = "conventional"}.
+You can find more details in the help file for \code{boot_ssc()}. The function is purposefully designed to mimic fixest's \code{\link[fixest]{ssc}} function.}
 
 \item{...}{Further arguments passed to or from other methods.}
 }

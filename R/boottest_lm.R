@@ -46,13 +46,14 @@
 #'        when fitting the regression object (e.g. if the cluster variable was not used
 #'        when fitting the regression model).
 #' @param floattype Float32 by default. Other optio: Float64. Should floating point numbers in Julia be represented as 32 or 64 bit?
-#' @param small_sample_adjustment Logical. True by default. Should small sample adjustments be applied?
 #' @param fweights Logical. FALSE by default, TRUE for frequency weights.
 #' @param getauxweights Logical. FALSE by default. Whether to save auxilliary weight matrix (v)
 #' @param t_boot Logical. Should bootstrapped t-statistics be returned?
 #' @param turbo Logical scalar, FALSE by default. Whether to exploit acceleration of the LoopVectorization package: slower on first use in a session, faster after
 #' @param maxmatsize NULL by default = no limit. Else numeric scalar to set the maximum size of auxilliary weight matrix (v), in gigabytes
 #' @param bootstrapc Logical scalar, FALSE by default. TRUE  to request bootstrap-c instead of bootstrap-t
+#' @param ssc An object of class `boot_ssc.type` obtained with the function \code{\link[fwildclusterboot]{boot_ssc}}. Represents how the small sample adjustments are computed. The defaults are `adj = TRUE, fixef.K = "none", cluster.adj = "TRUE", cluster.df = "conventional"`.
+#'             You can find more details in the help file for `boot_ssc()`. The function is purposefully designed to mimic fixest's \code{\link[fixest]{ssc}} function.
 #' @param ... Further arguments passed to or from other methods.
 #'
 #' @import JuliaConnectoR
@@ -132,65 +133,59 @@ boottest.lm <- function(object,
                         rng = NULL,
                         R = NULL,
                         beta0 = 0,
-                        sign_level = NULL,
+                        sign_level = 0.05,
                         type = "rademacher",
                         impose_null = TRUE,
                         p_val_type = "two-tailed",
                         tol = 1e-6,
                         na_omit = TRUE,
                         floattype = "Float32",
-                        small_sample_adjustment = TRUE,
                         fweights = FALSE,
                         getauxweights = FALSE,
                         t_boot = FALSE,
                         turbo = FALSE,
                         maxmatsize = NULL,
                         bootstrapc = FALSE,
+                        ssc = boot_ssc(adj = TRUE,
+                                       fixef.K = "none",
+                                       cluster.adj = TRUE,
+                                       cluster.df = "conventional"),
                         ...) {
 
   call <- match.call()
   dreamerr::validate_dots(stop = TRUE)
 
-  check_arg(clustid, "character scalar | character vector")
-  check_arg(param, "scalar character | character vector")
-  check_arg(B, "scalar integer")
-  check_arg(sign_level, "scalar numeric")
+  check_arg(object, "MBT class(lm)")
+  check_arg(clustid, "MBT character scalar | character vector")
+  check_arg(param, "MBT scalar character | character vector")
+  check_arg(B, "MBT scalar integer")
+  check_arg(sign_level, "scalar numeric GT{0} LT{1}")
+  check_arg(type, "charin(rademacher, mammen, norm, gamma, webb)")
   check_arg(conf_int, "logical scalar | NULL")
   check_arg(rng, "scalar integer | NULL")
-  check_arg(R, "NULL| scalar numeric | numeric vector | numeric matrix")
+  check_arg(R, "NULL| scalar numeric | numeric vector")
   check_arg(beta0, "numeric scalar | numeric vector | NULL")
   check_arg(bootcluster, "character vector")
-  check_arg(tol, "numeric scalar")
-  check_arg(floattype, "character scalar")
-  check_arg(small_sample_adjustment, "scalar logical")
+  check_arg(tol, "numeric scalar GT{0}")
+  check_arg(floattype, "charin(Float32, Float64)")
   check_arg(fweights, "scalar logical")
   check_arg(getauxweights, "scalar logical")
   check_arg(t_boot, "scalar logical")
   check_arg(turbo, "scalar logical")
   check_arg(maxmatsize, "scalar integer | NULL")
   check_arg(bootstrapc, "scalar logical")
+  check_arg(p_val_type, 'charin(two-tailed, equal-tailed,>, <)')
+  check_arg(boot_ssc, 'class(ssc) | class(boot_ssc)')
 
-  # nrow_R <- nrow(R)
-  # if(nrow_R > 1 && (is.null(conf_int) || conf_int == TRUE)){
-  #   message(paste("The hypothesis tests", nrow_R, "joint hypothesis and conf_int = TRUE. boottest() does not compute confidence intervals for hypotheses with q>1, and therefore we set conf_int = FALSE."))
-  #   # even better: manipulate call
-  #   conf_int <- FALSE
-  # }
-
-
-  if(!(floattype %in% c("Float32", "Float64"))){
-    stop("floattype needs either to be 'Float32' or 'Float64'.")
+  # translate ssc into small_sample_adjustment
+  if(ssc[['adj']] == TRUE && ssc[['cluster.adj']] == TRUE){
+    small_sample_adjustment <- TRUE
+  } else {
+    small_sample_adjustment <- FALSE
   }
 
-  if(tol < 0){
-    stop("The function argument tol needs to be positive.",
-         call. = FALSE)
-  }
-
-  if(!(p_val_type %in% c("two-tailed", "equal-tailed",">", "<"))){
-    stop("The function argument p_val_type must be
-         'two-tailed', 'equal-tailed','>' or '<'.",
-         call. = FALSE)
+  if(ssc[['fixef.K']] != "none" || ssc[['cluster.df']] != "conventional"){
+    message(paste("Currently, boottest() only supports fixef.K = 'none' and cluster.df = 'conventional'."))
   }
 
   if ((conf_int == TRUE || is.null(conf_int)) & B <= 100) {
@@ -200,17 +195,6 @@ boottest.lm <- function(object,
           works properly.",
          call. = FALSE
     )
-  }
-  if (!is.null(sign_level) & (sign_level <= 0 || sign_level >= 1)) {
-    stop("The function argument sign_level is outside of the unit interval
-         (0, 1). Please specify sign_level so that it is within the
-         unit interval.",
-         call. = FALSE
-    )
-  }
-
-  if (is.null(sign_level)) {
-    sign_level <- 0.05
   }
 
   if (mean(param %in% c(names(coef(object)))) != 1) {
