@@ -127,7 +127,7 @@ confidence interval.}
 \item{t_boot}{The bootstrapped t-statistics. Only returned if t_boot = TRUE.}
 }
 \description{
-\code{waldttest.lm} is a S3 method that allows for fast wild cluster
+\code{waldtest.lm} is a S3 method that allows for fast wild cluster
 bootstrap inference of multivariate hypotheses for objects of class lm by
 implementing the fast wild bootstrap algorithm developed in Roodman et al., 2019.
 }
@@ -137,30 +137,6 @@ implementing the fast wild bootstrap algorithm developed in Roodman et al., 2019
  data(voters)
  lm_fit <-lm(proposition_vote ~ treatment + ideology1 + log_income + Q1_immigration,
           data = voters)
- boot1 <- boottest(lm_fit,
-                   B = 9999,
-                   param = "treatment",
-                    clustid = "group_id1")
- boot2 <- boottest(lm_fit,
-                   B = 9999,
-                   param = "treatment",
-                  clustid = c("group_id1", "group_id2"))
- boot3 <- boottest(lm_fit,
-                   B = 9999,
-                   param = "treatment",
-                   clustid = c("group_id1", "group_id2"),
-                   sign_level = 0.2,
-                   rng = 8,
-                   beta0 = 2)
- # test treatment + ideology1 = 2
- boot4 <- boottest(lm_fit,
-                   B = 9999,
-                   clustid = c("group_id1", "group_id2"),
-                   param = c("treatment", "ideology1"),
-                   R = c(1, 1),
-                   beta0 = 2)
- summary(boot1)
- #plot(boot1)
 }
 }
 \references{

@@ -4,5 +4,7 @@ utils::globalVariables(c(
   "group_id2",
   "ideology1",
   "ideology2",
-  "treatment"
+  "treatment",
+  "JuliaCall",
+  "usethis"
 ))

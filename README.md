@@ -66,6 +66,14 @@ library(wildboottestjlr)
 wildboottestr_setup()
 ```
 
+Similarly, you can set the number of Julia threads by running
+
+``` r
+julia_set_ntreads()
+```
+
+and following the instructions.
+
 ## Example
 
 `wildboottestjlr's` central function is `boottest()`. Beyond few minor
@@ -290,15 +298,17 @@ summary(boot_ivreg)
 #>  Confidence Sets: 95%
 #>  Number of Clusters: 9
 #> 
+#>              term  estimate statistic    p.value   conf.low conf.high
+#> 1 1*education = 0 0.0904587  2.207293 0.01901902 0.01356883 0.2421277
 ```
 
 ## Benchmarks
 
 After compilation, `wildboottestjlr` is orders of magnitude faster than
-`fwildclusterboot`, in particular when the number of clusters N\_G and
+`fwildclusterboot`, in particular when the number of clusters N_G and
 the number of bootstrap iterations B get large.
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
 
 The benchmarks plot the median value of 3 runs of a linear regression
 with N = 10.000 and k = 21.

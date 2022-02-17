@@ -20,7 +20,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   check_arg(fe, "character scalar | NULL")
   check_arg(param, "character vector | character vector | NULL")
   check_arg(bootcluster, "character vector | NULL")
-  check_arg(R, "numeric vector | numeric scalar")
+  check_arg(R, "numeric vector | numeric scalar| numeric matrix")
 
   if (class(object) == "fixest") {
     of <- object$call
@@ -62,8 +62,19 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
 
     # add cluster variables specified in feols-cluster and boottest-cluster arguments
     if (!is.null(eval(of$cluster))) {
-      formula <- update(formula, paste("~ . +", paste(eval(of$cluster), collapse = "+")))
+      if(class(eval(of$cluster)) == "formula"){
+        add_cluster <- unlist(strsplit(deparse(of$cluster), "[~]"))[2]
+        formula <- update(formula, paste("~ . +", paste(add_cluster, collapse = "+")))
+      } else if(class(eval(of$cluster)) == "character"){
+        formula <- update(formula, paste("~ . +", paste(eval(of$cluster), collapse = "+")))
+      } else {
+        deparse_data <- unlist(strsplit(deparse(of$data), "[$]"))
+        deparse_cluster <- unlist(strsplit(deparse(of$cluster), "[$]"))
+        add_cluster <- deparse_cluster[-(which(deparse_cluster %in% deparse_data))]
+        formula <- update(formula, paste("~ . +", paste(add_cluster, collapse = "+")))
+      }
     }
+
     if (!is.null(cluster)) {
       formula <- update(formula, paste("~ . +", paste(cluster, collapse = "+")))
     }
@@ -107,6 +118,7 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     #}
     N_model <- object$nobs
     model_param_names <- c(names(coef(object)), object$fixef)
+
   } else if (class(object) == "felm") {
 
     of <- object$call
@@ -241,6 +253,8 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
     of[[1L]] <- quote(stats::model.frame)
     of <- eval(of, parent.frame())
     N_model <- object$nobs
+
+    model_param_names <- names(coef(object))
 
 
   }
@@ -392,7 +406,8 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
       bootcluster <- clustid[which.max(N_G)]
     } else if (bootcluster == "min") {
       bootcluster <- clustid[which.min(N_G)]
-    } else if (length(bootcluster) == 1 && bootcluster %in% c(model_param_names, cluster_names)) {
+    } else if (mean(bootcluster %in% c(model_param_names, cluster_names)) == 1) {
+      # all bootcluster variables in model parameter names or cluster names
       # no comma - then bootcluster is a data.frame. this is required later.
       bootcluster <- clustid[which(names(clustid) == bootcluster)]
     }
@@ -410,15 +425,24 @@ preprocess <- function(object, cluster, fe, param, bootcluster, na_omit, R) {
   if(class(object) == "ivreg"){
     n_exog <- length(names(object$exogenous))
     n_endog <- length(names(object$endogenous))
-    R0 <- rep(0, n_exog + n_endog)
-    R0[match(param,c(names(object$exogenous), names(object$endogenous)))] <- R
-    #R0[1:n_exog][match(param, colnames(X_exog))] <- R
-    #R0[(n_exog +1):(n_exog + n_endog)][match(param, colnames(X_endog))] <- R
-    names(R0) <- c(names(object$exogenous), names(object$endogenous))
+    if(!is.matrix(R)){
+      R0 <- rep(0, n_exog + n_endog)
+      R0[match(param,c(names(object$exogenous), names(object$endogenous)))] <- R
+      #R0[1:n_exog][match(param, colnames(X_exog))] <- R
+      #R0[(n_exog +1):(n_exog + n_endog)][match(param, colnames(X_endog))] <- R
+      names(R0) <- c(names(object$exogenous), names(object$endogenous))
+    } else {
+      R0 <- R
+    }
   } else {
-    R0 <- rep(0, length(colnames(X)))
-    R0[match(param, colnames(X))] <- R
-    names(R0) <- colnames(X)
+    if(!is.matrix(R)){
+      R0 <- rep(0, length(colnames(X)))
+      R0[match(param, colnames(X))] <- R
+      names(R0) <- colnames(X)
+    } else {
+      R0 <- R
+    }
+
   }
 
 

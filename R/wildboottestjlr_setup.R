@@ -3,13 +3,15 @@ wildboottestjlr_setup <- function(){
   #' install Julia, connect R and Julia, install and pre-compile WildBootTests.jl
   #' @importFrom JuliaConnectoR juliaEval
   #' @importFrom utils install.packages installed.packages
+  #' @importFrom usethis edit_r_environ
+  #' @importFrom JuliaCall install_julia
   #' @export
 
 
   install_julia <- readline(prompt= "Install Julia? If Yes, type 'Yes', else 'No': " )
   if(install_julia == "Yes"){
     install_julia <- TRUE
-    if(!require(JuliaCall)){
+    if(!requireNamespace(JuliaCall)){
       install_JuliaCall <- readline("To install Julia from within R, the JuliaCall package needs to be installed. To install the JuliaCall package, type 'Yes', else 'No':")
       if(install_JuliaCall){
         install.packages(JuliaCall)
@@ -33,7 +35,7 @@ wildboottestjlr_setup <- function(){
   connect_r_julia <- readline("Have you already added your Julia path to your renviron file? If yes, type 'Yes', else type 'No': ")
   if(connect_r_julia == "No"){
     # check if usethis is installed
-    if(!require(usethis)){
+    if(!requireNamespace(usethis)){
       install_usethis <- readline("To set the path to Julia from within R, the 'usethis' package needs to be installed. Reply 'Yes' to install 'usethis':")
       if(install_usethis){
         install.packages(usethis)

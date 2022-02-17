@@ -94,6 +94,8 @@ summary.boottest <- function(object, digits = 3, ...) {
     # sprintf("Adj. R-Squared: %s\n", round(adj_r_squared,6)),
     sprintf("%s\n", "")
   )
+
+  tidy(object)
 }
 
 plot.boottest <- function(x, ...) {
@@ -121,7 +123,7 @@ plot.boottest <- function(x, ...) {
     graphics::abline(v = conf_int[1], col = "blue")
     graphics::abline(v = conf_int[2], col = "blue")
     graphics::abline(h = sign_level, col = "red")
-}
+  }
 
 
 glance.boottest <- function(x, ...){

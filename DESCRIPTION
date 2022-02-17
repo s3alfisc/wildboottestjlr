@@ -1,6 +1,6 @@
 Package: wildboottestjlr
 Title: Fast Wild Cluster Bootstrap Inference in R via WildBootTests.jl and JuliaConnectoR 
-Version: 0.1
+Version: 0.1.1
 Authors@R: 
     c(
     person(given = "Fischer",
@@ -20,27 +20,26 @@ Imports:
     JuliaConnectoR,
     Formula,
     dreamerr,
-    generics
+    generics, 
+    JuliaCall, 
+    usethis
 Suggests: 
     fwildclusterboot,
     fixest,
     lfe,
     ivreg,
-    data.table,
-    fabricatr,
     knitr,
     rmarkdown,
     broom,
     modelsummary,
+    fabricatr,
     RStata,
     tinytest, 
-    clubSandwich, 
-    JuliaCall, 
-    usethis
+    clubSandwich
 Remotes: s3alfisc/fwildclusterboot
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 SystemRequirements: Julia (>= 1.0), WildBootTests.jl

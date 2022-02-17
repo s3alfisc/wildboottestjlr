@@ -69,6 +69,14 @@ library(wildboottestjlr)
 wildboottestr_setup()
 ```
 
+Similarly, you can set the number of Julia threads by running 
+
+```{r, eval = FALSE}
+julia_set_ntreads()
+```
+
+and following the instructions.
+
 ## Example 
 
 `wildboottestjlr's` central function is `boottest()`. Beyond few minor differences, it largely mirrors the `boottest()` function from the [fwildclusterboot](https://github.com/s3alfisc/fwildclusterboot) package.

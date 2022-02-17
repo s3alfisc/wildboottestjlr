@@ -1,6 +1,6 @@
 #' Fast wild cluster bootstrap inference for object of class lm
 #'
-#' `waldttest.lm` is a S3 method that allows for fast wild cluster
+#' `waldtest.lm` is a S3 method that allows for fast wild cluster
 #' bootstrap inference of multivariate hypotheses for objects of class lm by
 #' implementing the fast wild bootstrap algorithm developed in Roodman et al., 2019.
 #'
@@ -130,7 +130,6 @@ waldtest.lm <- function(object,
   dreamerr::validate_dots(stop = TRUE)
 
   check_arg(clustid, "character scalar | character vector")
-  check_arg(param, "scalar character | character vector")
   check_arg(B, "scalar integer")
   check_arg(sign_level, "scalar numeric")
   check_arg(conf_int, "logical scalar | NULL")
@@ -147,10 +146,14 @@ waldtest.lm <- function(object,
   check_arg(turbo, "scalar logical")
   check_arg(maxmatsize, "scalar integer | NULL")
   check_arg(bootstrapc, "scalar logical")
+  check_arg(floattype, "charin(Float32, Float64")
 
   if(length(beta0) != nrow(R)){
     stop(paste("beta0 must be a vector of length nrow(R) = ", nrow(R), "but it is of length", length(beta0), "."))
   }
+
+  # param required in preprocess
+  param <- NULL
 
   # translate ssc into small_sample_adjustment
   if(ssc[['adj']] == TRUE && ssc[['cluster.adj']] == TRUE){
@@ -206,19 +209,7 @@ waldtest.lm <- function(object,
     sign_level <- 0.05
   }
 
-  if (mean(param %in% c(names(coef(object)))) != 1) {
-    stop(paste("The parameter", param, "is not included in the estimated model.
-               Maybe you are trying to test for an interaction parameter?
-               To see all model parameter names, run names(coef(model))."))
-  }
 
-  if(is.null(R)){
-    R <- rep(1, length(param))
-  } else {
-    if(is.vector(R) && length(R) != length(param)){
-      stop("The constraints vector must either be NULL or a numeric of the same length as the `param` input vector.")
-    }
-  }
 
   if (((1 - sign_level) * (B + 1)) %% 1 != 0) {
     message(paste("Note: The bootstrap usually performs best when the
@@ -247,7 +238,6 @@ waldtest.lm <- function(object,
   preprocess <- preprocess(object = object,
                            cluster = clustid,
                            fe = NULL,
-                           param = param,
                            bootcluster = bootcluster,
                            na_omit = na_omit,
                            R = R)
@@ -255,7 +245,6 @@ waldtest.lm <- function(object,
 
 
   clustid_dims <- preprocess$clustid_dims
-  point_estimate <- as.vector(object$coefficients[param] %*% preprocess$R0[param])
 
   clustid_fml <- as.formula(paste("~", paste(clustid, collapse = "+")))
 
@@ -412,7 +401,7 @@ waldtest.lm <- function(object,
   plotpoints <- cbind(plotpoints$X[[1]], plotpoints$p)
 
   res_final <- list(
-    point_estimate = point_estimate,
+    #point_estimate = point_estimate,
     p_val = p_val,
     conf_int = conf_int,
     # p_test_vals = res_p_val$p_grid_vals,
@@ -421,7 +410,6 @@ waldtest.lm <- function(object,
     t_boot = t_boot,
     auxweights = getauxweights,
     #regression = res$object,
-    param = param,
     N = preprocess$N,
     B = B,
     clustid = clustid,
