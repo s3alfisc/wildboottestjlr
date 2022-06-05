@@ -16,6 +16,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![R-CMD-check](https://github.com/s3alfisc/wildboottestjlr/workflows/R-CMD-check/badge.svg)](https://github.com/s3alfisc/wildboottestjlr/actions)
 <!-- badges: end -->
 
+**Note**: All features of `wildboottestjlr` are fully integrated into [fwildclusterboot](https://github.com/s3alfisc/fwildclusterboot).
+
 # wildboottestjlr
 
 `wildboottestjlr` ports the functionality of the
